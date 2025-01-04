@@ -27,7 +27,7 @@ namespace lv
     private:
         Window m_Window;
         Device m_Device;
-        SwapChain m_SwapChain;
+        std::unique_ptr<SwapChain> m_SwapChain;
 
         VkPipelineLayout m_PipelineLayout;
         std::unique_ptr<Pipeline> m_Pipeline;
@@ -39,5 +39,7 @@ namespace lv
         void CreateCommandBuffers();
         void DrawFrame();
         void LoadModels();
+        void RecreateSwapChain();
+        void RecordCommandBuffer(int imageIndex);
     };
 }

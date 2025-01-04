@@ -21,12 +21,17 @@ namespace lv
 
         bool ShouldClose() const;
         void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
-        VkExtent2D GetExtent() const { return {m_Size.x, m_Size.y}; }
-        glm::uvec2 GetSize() const { return m_Size; }
+        inline VkExtent2D GetExtent() const { return {m_Size.x, m_Size.y}; }
+        inline glm::uvec2 GetSize() const { return m_Size; }
+        inline bool WasWindowResized() const { return m_IsFramebufferResized; }
+        inline void ResetWindowResizedFlag() { m_IsFramebufferResized = false; }
     private:
         glm::uvec2 m_Size;
+        bool m_IsFramebufferResized = false;
         std::string m_Title;
         GLFWwindow* m_GLFWWindow;
+
+        static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
     };
 }
 

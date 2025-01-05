@@ -7,8 +7,49 @@
 #include <stdexcept>
 #include <vector>
 #include <filesystem>
+#include <cstring>
 
 #define print(x) std::cout << x << '\n'
+
+#ifdef NDEBUG
+    const bool EnableValidationLayers = false;
+#else
+    const bool EnableValidationLayers = true;
+#endif
+
+const std::vector<const char*> validationLayers = {
+    "VK_LAYER_KHRONOS_validation"
+};
+
+bool CheckValidationLayerSupport()
+{
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+    for (const char* layerName : validationLayers)
+    {
+        bool layerFound = false;
+
+        for (const auto& layerProperties : availableLayers)
+        {
+            if (strcmp(layerName, layerProperties.layerName) == 0)
+            {
+                layerFound = true;
+                break;
+            }
+        }
+
+        if (!layerFound)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 class VulkanApp // NOLINT(*-pro-type-member-init)
 {
@@ -36,11 +77,16 @@ private:
         // Print all available extensions, comment out if not needed
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        auto extensions = std::vector<VkExtensionProperties>(extensionCount);
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,extensions.data());
+        auto supportedExtensions = std::vector<VkExtensionProperties>(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, supportedExtensions.data());
         printf("Extensions available: %u\n", extensionCount);
-        for (const auto& ext : extensions)
+        for (const auto& ext : supportedExtensions)
            printf("\t %s \n", ext.extensionName);
+
+        if (EnableValidationLayers && !CheckValidationLayerSupport())
+        {
+            throw std::runtime_error("Validation layers requested, but not available!");
+        }
 
         VkApplicationInfo appInfo { };
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -61,8 +107,14 @@ private:
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
 
-        // Validation layers
-        createInfo.enabledLayerCount = 0;
+        // Validation layers enabling
+        if (EnableValidationLayers)
+        {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        }
+        else
+            createInfo.enabledLayerCount = 0;
 
         auto result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
         if (result != VK_SUCCESS)
@@ -71,9 +123,44 @@ private:
         }
     }
 
+    void PickPhysicalDevice()
+    {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
+
+        if (deviceCount == 0)
+        {
+            throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+        }
+
+        auto devices = std::vector<VkPhysicalDevice>(deviceCount);
+        vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
+
+        for (const auto& device : devices)
+        {
+            if (IsDeviceSuitable(device))
+            {
+                m_PhysicalDevice = device;
+                break;
+            }
+        }
+
+        if (m_PhysicalDevice == VK_NULL_HANDLE)
+        {
+            throw std::runtime_error("Failed to find a suitable GPU!");
+        }
+    }
+
+    bool IsDeviceSuitable(VkPhysicalDevice device)
+    {
+        // For now pick the first available device
+        return true;
+    }
+
     void InitVulkan()
     {
         CreateInstance();
+        PickPhysicalDevice();
     }
 
     void MainLoop()
@@ -97,6 +184,7 @@ private:
     GLFWwindow* m_Window;
 
     VkInstance m_Instance;
+    VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 };
 
 int32_t main(int32_t argc, char* argv[])

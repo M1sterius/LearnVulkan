@@ -8,6 +8,7 @@
 #include <vector>
 #include <filesystem>
 #include <cstring>
+#include <optional>
 
 #define print(x) std::cout << x << '\n'
 
@@ -50,6 +51,16 @@ bool CheckValidationLayerSupport()
 
     return true;
 }
+
+struct QueueFamilyIndices
+{
+    std::optional<uint32_t> graphicsFamily;
+
+    bool IsComplete() const
+    {
+        return graphicsFamily.has_value();
+    }
+};
 
 class VulkanApp // NOLINT(*-pro-type-member-init)
 {
@@ -136,6 +147,7 @@ private:
         auto devices = std::vector<VkPhysicalDevice>(deviceCount);
         vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
+        // Pick the first device that supports graphics queue
         for (const auto& device : devices)
         {
             if (IsDeviceSuitable(device))
@@ -153,14 +165,83 @@ private:
 
     bool IsDeviceSuitable(VkPhysicalDevice device)
     {
-        // For now pick the first available device
-        return true;
+        auto indices = FindQueueFamilies(device);
+        return indices.IsComplete();
+    }
+
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device)
+    {
+        // Find all queue families that are available on this device
+
+        QueueFamilyIndices indices;
+
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+
+        // Check of graphics queue family is supported
+        int i = 0;
+        for (const auto& queueFamily : queueFamilies)
+        {
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                indices.graphicsFamily = i;
+
+            if (indices.IsComplete())
+                break;
+
+            i++;
+        }
+
+        return indices;
+    }
+
+    void CreateLogicalDevice()
+    {
+        QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
+
+        VkDeviceQueueCreateInfo queueCreateInfo { };
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        queueCreateInfo.queueCount = 1;
+        float queuePriority = 1.0f;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+
+        // Empty for now
+        VkPhysicalDeviceFeatures deviceFeatures { };
+
+        VkDeviceCreateInfo createInfo { };
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = 1;
+        createInfo.pEnabledFeatures = &deviceFeatures;
+
+        createInfo.enabledExtensionCount = 0;
+
+        if (EnableValidationLayers)
+        {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        } else
+        {
+            createInfo.enabledLayerCount = 0;
+        }
+
+        if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create logical device!");
+        }
+
+        vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
     }
 
     void InitVulkan()
     {
         CreateInstance();
         PickPhysicalDevice();
+        CreateLogicalDevice();
     }
 
     void MainLoop()
@@ -173,6 +254,7 @@ private:
 
     void Cleanup()
     {
+        vkDestroyDevice(m_Device, nullptr);
         vkDestroyInstance(m_Instance, nullptr);
         glfwDestroyWindow(m_Window);
         glfwTerminate();
@@ -185,6 +267,8 @@ private:
 
     VkInstance m_Instance;
     VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
+    VkDevice m_Device;
+    VkQueue m_GraphicsQueue;
 };
 
 int32_t main(int32_t argc, char* argv[])

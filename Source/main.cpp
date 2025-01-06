@@ -56,7 +56,7 @@ struct QueueFamilyIndices
 
 struct SwapChainSupportDetails
 {
-    VkSurfaceCapabilitiesKHR capabilities;
+    VkSurfaceCapabilitiesKHR capabilities { };
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
@@ -200,7 +200,7 @@ private:
         }
     }
 
-    bool CheckValidationLayerSupport()
+    static bool CheckValidationLayerSupport()
     {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -245,7 +245,7 @@ private:
         return indices.IsComplete() && areExtensionsSupported && isSwapChainAdequate;
     }
 
-    bool CheckDeviceExtensionSupport(VkPhysicalDevice device)
+    static bool CheckDeviceExtensionSupport(VkPhysicalDevice device)
     {
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -290,7 +290,7 @@ private:
         return details;
     }
 
-    VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+    static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
     {
         for (const auto& availableFormat : availableFormats)
         {
@@ -301,7 +301,7 @@ private:
         return availableFormats[0];
     }
 
-    VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+    static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
     {
         for (const auto& availablePresentMode : availablePresentModes)
         {
@@ -507,6 +507,11 @@ private:
         }
     }
 
+    void CreateGraphicsPipeline()
+    {
+
+    }
+
     void InitVulkan()
     {
         CreateInstance();
@@ -516,6 +521,7 @@ private:
         CreateLogicalDevice();
         CreateSwapChain();
         CreateImageViews();
+        CreateGraphicsPipeline();
     }
 
     void MainLoop()
@@ -562,8 +568,8 @@ private:
 
     std::vector<VkImage> m_SwapChainImages;
     std::vector<VkImageView> m_SwapChainImageViews;
-    VkFormat m_SwapChainFormat;
-    VkExtent2D m_SwapChainExtent;
+    VkFormat m_SwapChainFormat { };
+    VkExtent2D m_SwapChainExtent { };
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {

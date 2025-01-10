@@ -100,6 +100,15 @@ private:
 
         m_Window = glfwCreateWindow((int)WINDOW_WIDTH, (int)WINDOW_HEIGHT,
                                     "Learn Vulkan", nullptr, nullptr);
+
+        glfwSetWindowUserPointer(m_Window, this);
+        glfwSetFramebufferSizeCallback(m_Window, framebuffer_resize_callback);
+    }
+
+    static void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
+    {
+        auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+        app->m_FramebufferResizeFlag = true;
     }
 
     void CreateInstance()
@@ -534,6 +543,15 @@ private:
 
     void RecreateSwapChain()
     {
+        // Wait until the window is no longer minimized
+        int width = 0, height = 0;
+        glfwGetFramebufferSize(m_Window, &width, &height);
+        while (width == 0 || height == 0)
+        {
+            glfwGetFramebufferSize(m_Window, &width, &height);
+            glfwWaitEvents();
+        }
+
         vkDeviceWaitIdle(m_Device);
 
         CleanUpSwapChain();
@@ -955,9 +973,10 @@ private:
 
         result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResizeFlag)
         {
             RecreateSwapChain();
+            m_FramebufferResizeFlag = false;
         }
         else if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to present swap chain image!");
@@ -1037,6 +1056,7 @@ private:
     VkFormat m_SwapChainFormat { };
     VkExtent2D m_SwapChainExtent { };
     uint32_t m_CurrentFrame = 0;
+    bool m_FramebufferResizeFlag = false;
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {

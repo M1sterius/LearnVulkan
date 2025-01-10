@@ -96,7 +96,7 @@ private:
     {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         m_Window = glfwCreateWindow((int)WINDOW_WIDTH, (int)WINDOW_HEIGHT,
                                     "Learn Vulkan", nullptr, nullptr);
@@ -519,6 +519,30 @@ private:
         m_SwapChainExtent = extent;
     }
 
+    void CleanUpSwapChain()
+    {
+        for (auto& m_SwapChainFramebuffer : m_SwapChainFramebuffers) {
+            vkDestroyFramebuffer(m_Device, m_SwapChainFramebuffer, nullptr);
+        }
+
+        for (auto& m_SwapChainImageView : m_SwapChainImageViews) {
+            vkDestroyImageView(m_Device, m_SwapChainImageView, nullptr);
+        }
+
+        vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
+    }
+
+    void RecreateSwapChain()
+    {
+        vkDeviceWaitIdle(m_Device);
+
+        CleanUpSwapChain();
+
+        CreateSwapChain();
+        CreateImageViews();
+        CreateFramebuffers();
+    }
+
     void CreateSurface()
     {
         if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS)
@@ -880,10 +904,21 @@ private:
     {
         // Wait until the previous frame has finished
         vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
-        vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame]);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+        auto result = vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            RecreateSwapChain();
+            return;
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            throw std::runtime_error("Failed to acquire swap chain image!");
+        }
+
+        // Only reset the fence if we are submitting work
+        vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame]);
 
         vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrame], 0);
         RecordCommandBuffer(m_CommandBuffers[m_CurrentFrame], imageIndex);
@@ -918,7 +953,15 @@ private:
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+        result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        {
+            RecreateSwapChain();
+        }
+        else if (result != VK_SUCCESS) {
+            throw std::runtime_error("failed to present swap chain image!");
+        }
 
         m_CurrentFrame = (m_CurrentFrame + 1) % FRAMES_IN_FLIGHT;
     }
@@ -936,6 +979,13 @@ private:
 
     void Cleanup()
     {
+        CleanUpSwapChain();
+
+        vkDestroyPipeline(m_Device, m_Pipeline, nullptr);
+        vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
+
+        vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
+
         for (size_t i = 0; i < FRAMES_IN_FLIGHT; i++)
         {
             vkDestroySemaphore(m_Device, m_ImageAvailableSemaphores[i], nullptr);
@@ -945,20 +995,6 @@ private:
 
         vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
 
-        for (auto framebuffer : m_SwapChainFramebuffers)
-        {
-            vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
-        }
-
-        vkDestroyPipeline(m_Device, m_Pipeline, nullptr);
-        vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
-        vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
-
-        for (const auto imageView : m_SwapChainImageViews) {
-            vkDestroyImageView(m_Device, imageView, nullptr);
-        }
-
-        vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
         vkDestroyDevice(m_Device, nullptr);
 
         if (EnableValidationLayers) {

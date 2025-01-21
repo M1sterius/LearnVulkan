@@ -9,6 +9,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/Bin)
 
 add_executable(LearnVulkan
     Source/main.cpp
+        Source/Window.cpp
+        Source/Window.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

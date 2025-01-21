@@ -2,6 +2,8 @@
 #include <GLFW/glfw3.h>
 #include "Assert.hpp"
 
+#include "Window.hpp"
+
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
@@ -29,7 +31,8 @@ const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
         return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
@@ -37,7 +40,9 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+{
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
         func(instance, debugMessenger, pAllocator);
@@ -86,41 +91,22 @@ class VulkanApp // NOLINT(*-pro-type-member-init)
 public:
     void Run()
     {
-        InitWindow();
+        m_Window = std::make_unique<Window>(1600, 900, "Learn Vulkan!");
         InitVulkan();
         MainLoop();
         Cleanup();
     }
 private:
-    void InitWindow()
-    {
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-
-        m_Window = glfwCreateWindow((int)WINDOW_WIDTH, (int)WINDOW_HEIGHT,
-                                    "Learn Vulkan", nullptr, nullptr);
-
-        glfwSetWindowUserPointer(m_Window, this);
-        glfwSetFramebufferSizeCallback(m_Window, framebuffer_resize_callback);
-    }
-
-    static void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
-    {
-        auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-        app->m_FramebufferResizeFlag = true;
-    }
-
     void CreateInstance()
     {
         // Print all available extensions, comment out if not needed
-        // uint32_t extensionCount = 0;
-        // vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        // auto supportedExtensions = std::vector<VkExtensionProperties>(extensionCount);
-        // vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, supportedExtensions.data());
-        // printf("Extensions available: %u\n", extensionCount);
-        // for (const auto& ext : supportedExtensions)
-        //    printf("\t %s \n", ext.extensionName);
+         uint32_t extensionCount = 0;
+         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+         auto supportedExtensions = std::vector<VkExtensionProperties>(extensionCount);
+         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, supportedExtensions.data());
+         printf("Extensions available: %u\n", extensionCount);
+         for (const auto& ext : supportedExtensions)
+            printf("\t %s \n", ext.extensionName);
 
         if (EnableValidationLayers && !CheckValidationLayerSupport())
         {
@@ -186,10 +172,11 @@ private:
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT; // VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
         createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        createInfo.pfnUserCallback = debugCallback;
+        createInfo.pfnUserCallback = debug_callback;
     }
 
-    void SetupDebugMessenger() {
+    void SetupDebugMessenger()
+    {
         if (!EnableValidationLayers) return;
 
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -348,12 +335,9 @@ private:
             return capabilities.currentExtent;
         }
 
-        int width, height;
-        glfwGetFramebufferSize(m_Window, &width, &height);
-
         VkExtent2D actualExtent = {
-            static_cast<uint32_t>(width),
-            static_cast<uint32_t>(height)
+            m_Window->GetWidth(),
+            m_Window->GetHeight()
         };
 
         actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
@@ -544,11 +528,12 @@ private:
     void RecreateSwapChain()
     {
         // Wait until the window is no longer minimized
-        int width = 0, height = 0;
-        glfwGetFramebufferSize(m_Window, &width, &height);
+        uint32_t width = m_Window->GetWidth();
+        uint32_t height = m_Window->GetHeight();
         while (width == 0 || height == 0)
         {
-            glfwGetFramebufferSize(m_Window, &width, &height);
+            width = m_Window->GetWidth();
+            height = m_Window->GetHeight();
             glfwWaitEvents();
         }
 
@@ -563,10 +548,7 @@ private:
 
     void CreateSurface()
     {
-        if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create window surface!");
-        }
+        m_Surface = m_Window->CreateWindowSurface(m_Instance);
     }
 
     VkShaderModule CreateShaderModule(const std::vector<char>& bytecode)
@@ -973,10 +955,10 @@ private:
 
         result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResizeFlag)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_Window->ResizeFlag)
         {
             RecreateSwapChain();
-            m_FramebufferResizeFlag = false;
+            m_Window->ResizeFlag = false;
         }
         else if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to present swap chain image!");
@@ -987,7 +969,7 @@ private:
 
     void MainLoop()
     {
-        while (!glfwWindowShouldClose(m_Window))
+        while (!m_Window->ShouldClose())
         {
             glfwPollEvents();
             RenderFrame();
@@ -1022,15 +1004,15 @@ private:
 
         vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
         vkDestroyInstance(m_Instance, nullptr);
-        glfwDestroyWindow(m_Window);
-        glfwTerminate();
+
+        m_Window.reset(); // Destroy window
     }
 
     const uint32_t WINDOW_WIDTH = 1600;
     const uint32_t WINDOW_HEIGHT = 900;
     const uint32_t FRAMES_IN_FLIGHT = 2;
 
-    GLFWwindow* m_Window = nullptr;
+    std::unique_ptr<Window> m_Window;
 
     VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 
@@ -1056,9 +1038,8 @@ private:
     VkFormat m_SwapChainFormat { };
     VkExtent2D m_SwapChainExtent { };
     uint32_t m_CurrentFrame = 0;
-    bool m_FramebufferResizeFlag = false;
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
         return VK_FALSE;

@@ -11,6 +11,10 @@ add_executable(LearnVulkan
     Source/main.cpp
         Source/Window.cpp
         Source/Window.hpp
+        Source/VulkanInstance.cpp
+        Source/VulkanInstance.hpp
+        Source/GlobalUtility.cpp
+        Source/GlobalUtility.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

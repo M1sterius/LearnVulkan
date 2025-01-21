@@ -1,14 +1,16 @@
 #pragma once
 
 #define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <utility>
+#include "GLFW/glfw3.h"
 
 class Window
 {
 public:
     Window(uint32_t width, uint32_t height, const char* title);
     ~Window();
+
+    Window(const Window&) = delete;
+    Window operator = (const Window&) = delete;
 
     bool ShouldClose() const;
     bool ResizeFlag = false;

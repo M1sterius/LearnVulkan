@@ -39,9 +39,7 @@ VkSurfaceKHR Window::CreateWindowSurface(VkInstance instance)
     VkSurfaceKHR surface = VK_NULL_HANDLE;
 
     if (glfwCreateWindowSurface(instance, m_Window, nullptr, &surface) != VK_SUCCESS)
-    {
         throw std::runtime_error("Failed to create window surface!");
-    }
 
     return surface;
 }

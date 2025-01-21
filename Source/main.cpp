@@ -71,7 +71,7 @@ class VulkanApp // NOLINT(*-pro-type-member-init)
 public:
     void Run()
     {
-        m_Window = std::make_unique<Window>(1600, 900, "Learn Vulkan!");
+        m_Window = std::make_unique<Window>(800, 600, "Learn Vulkan!");
         InitVulkan();
         MainLoop();
         Cleanup();
@@ -746,7 +746,6 @@ private:
     void InitVulkan()
     {
         m_Instance = std::make_unique<VulkanInstance>("Vulkan App", EnableValidationLayers);
-        m_Instance->SetupDebugMessenger();
         CreateSurface();
         PickPhysicalDevice();
         CreateLogicalDevice();
@@ -857,8 +856,6 @@ private:
         vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
 
         vkDestroyDevice(m_Device, nullptr);
-
-        m_Instance->DestroyDebugMessenger();
 
         vkDestroySurfaceKHR(m_Instance->Get(), m_Surface, nullptr);
 

@@ -45,13 +45,6 @@ static std::vector<char> ReadFile(const std::filesystem::path& path)
 }
 
 
-struct SwapChainSupportDetails
-{
-    VkSurfaceCapabilitiesKHR capabilities { };
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
-
 class VulkanApp
 {
 public:
@@ -100,7 +93,7 @@ private:
         bool isSwapChainAdequate = false;
         if (areExtensionsSupported)
         {
-            const auto swapChainSupport = QuerySwapChainSupport(device);
+            const auto swapChainSupport = QuerySwapChainSupport(device, m_Surface);
             isSwapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
 
@@ -125,35 +118,6 @@ private:
         }
 
         return requiredExtensions.empty();
-    }
-
-    SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device)
-    {
-        // Retrieve information about swap chain support on device
-
-        SwapChainSupportDetails details;
-
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface, &details.capabilities);
-
-        // Surface format capabilities
-        uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formatCount, nullptr);
-        if (formatCount != 0)
-        {
-            details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formatCount, details.formats.data());
-        }
-
-        // Surface present modes
-        uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, nullptr);
-        if (presentModeCount != 0)
-        {
-            details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, details.presentModes.data());
-        }
-
-        return details;
     }
 
     static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
@@ -198,7 +162,7 @@ private:
 
     void CreateLogicalDevice()
     {
-        const  auto indices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
+        const auto indices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -273,7 +237,7 @@ private:
 
     void CreateSwapChain()
     {
-        auto swapChainSupport = QuerySwapChainSupport(m_PhysicalDevice);
+        auto swapChainSupport = QuerySwapChainSupport(m_PhysicalDevice, m_Surface);
         auto surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
         auto presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
         auto extent = ChooseSwapExtent(swapChainSupport.capabilities);
@@ -825,8 +789,8 @@ private:
 
     VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
     VkDevice m_Device = VK_NULL_HANDLE;
-    VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+    VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
     VkQueue m_PresentQueue = VK_NULL_HANDLE;
     VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;

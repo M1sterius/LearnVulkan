@@ -7,7 +7,7 @@
 class VulkanInstance
 {
 public:
-    explicit VulkanInstance(const char* appName, bool enableValidationLayers = true);
+    explicit VulkanInstance(const char* appName, bool enableValidationLayers);
     ~VulkanInstance();
 
     VulkanInstance(const VulkanInstance&) = delete;

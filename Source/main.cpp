@@ -25,10 +25,6 @@
     constexpr bool EnableValidationLayers = true;
 #endif
 
-const std::vector<const char*> deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
-
 static std::vector<char> ReadFile(const std::filesystem::path& path)
 {
     auto file = std::ifstream(path, std::ios::ate | std::ios::binary);
@@ -48,16 +44,6 @@ static std::vector<char> ReadFile(const std::filesystem::path& path)
     return buffer;
 }
 
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool IsComplete() const
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
 
 struct SwapChainSupportDetails
 {
@@ -66,7 +52,7 @@ struct SwapChainSupportDetails
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-class VulkanApp // NOLINT(*-pro-type-member-init)
+class VulkanApp
 {
 public:
     void Run()
@@ -90,7 +76,7 @@ private:
         auto devices = std::vector<VkPhysicalDevice>(deviceCount);
         vkEnumeratePhysicalDevices(m_Instance->Get(), &deviceCount, devices.data());
 
-        // Pick the first device that supports graphics queue
+        // Pick the first suitable device
         for (const auto& device : devices)
         {
             if (IsDeviceSuitable(device))
@@ -108,7 +94,7 @@ private:
 
     bool IsDeviceSuitable(VkPhysicalDevice device)
     {
-        const auto indices = FindQueueFamilies(device);
+        const auto indices = FindQueueFamilies(device, m_Surface);
         const auto areExtensionsSupported = CheckDeviceExtensionSupport(device);
 
         bool isSwapChainAdequate = false;
@@ -123,6 +109,8 @@ private:
 
     static bool CheckDeviceExtensionSupport(VkPhysicalDevice device)
     {
+        // Check if all required extensions are supported by device
+
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -141,6 +129,8 @@ private:
 
     SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device)
     {
+        // Retrieve information about swap chain support on device
+
         SwapChainSupportDetails details;
 
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface, &details.capabilities);
@@ -206,44 +196,9 @@ private:
         return actualExtent;
     }
 
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device)
-    {
-        // Find all queue families that are available on this device
-
-        QueueFamilyIndices indices;
-
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-        int i = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                indices.graphicsFamily = i;
-            }
-
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_Surface, &presentSupport);
-
-            if (presentSupport) {
-                indices.presentFamily = i;
-            }
-
-            if (indices.IsComplete()) {
-                break;
-            }
-
-            i++;
-        }
-
-        return indices;
-    }
-
     void CreateLogicalDevice()
     {
-        QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
+        const  auto indices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -339,7 +294,7 @@ private:
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
+        const auto indices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily)
@@ -644,7 +599,7 @@ private:
 
     void CreateCommandPool()
     {
-        const auto queueFamilyIndices = FindQueueFamilies(m_PhysicalDevice);
+        const auto queueFamilyIndices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
 
         VkCommandPoolCreateInfo poolInfo { };
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

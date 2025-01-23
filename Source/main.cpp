@@ -140,7 +140,7 @@ private:
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         
-        VkAttachmentReference colorAttachmentRef{};
+        VkAttachmentReference colorAttachmentRef {};
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
@@ -157,7 +157,7 @@ private:
         dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-        VkRenderPassCreateInfo renderPassInfo{};
+        VkRenderPassCreateInfo renderPassInfo {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassInfo.attachmentCount = 1;
         renderPassInfo.pAttachments = &colorAttachment;
@@ -166,9 +166,8 @@ private:
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(m_Device->Get(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
+        if (vkCreateRenderPass(m_Device->Get(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS)
             throw std::runtime_error("Failed to create render pass!");
-        }
     }
 
     void CreateGraphicsPipeline()
@@ -192,16 +191,6 @@ private:
         fragShaderStageInfo.pName = "main";
 
         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
-
-        // const std::vector<VkDynamicState> dynamicStates = {
-        //     VK_DYNAMIC_STATE_VIEWPORT,
-        //     VK_DYNAMIC_STATE_SCISSOR
-        // };
-        //
-        // VkPipelineDynamicStateCreateInfo dynamicState { };
-        // dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        // dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-        // dynamicState.pDynamicStates = dynamicStates.data();
 
         // How vertices will be imported from vertex buffer
         VkPipelineVertexInputStateCreateInfo vertexInputInfo { };
@@ -293,7 +282,7 @@ private:
             throw std::runtime_error("failed to create pipeline layout!");
         }
 
-        VkGraphicsPipelineCreateInfo pipelineInfo{};
+        VkGraphicsPipelineCreateInfo pipelineInfo {};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = 2;
         pipelineInfo.pStages = shaderStages;
@@ -310,9 +299,8 @@ private:
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
 
-        if (vkCreateGraphicsPipelines(m_Device->Get(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(m_Device->Get(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
             throw std::runtime_error("failed to create graphics pipeline!");
-        }
 
         // Must stay at the very end of this function
         vkDestroyShaderModule(m_Device->Get(), fragShaderModule, nullptr);
@@ -411,9 +399,8 @@ private:
         beginInfo.flags = 0; // Optional
         beginInfo.pInheritanceInfo = nullptr; // Optional
 
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
             throw std::runtime_error("Failed to begin recording command buffer!");
-        }
 
         VkRenderPassBeginInfo renderPassInfo { };
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -422,7 +409,7 @@ private:
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = m_Swapchain->GetExtent();
 
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        VkClearValue clearColor = {{{0.2f, 0.3f, 0.4f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
@@ -448,9 +435,8 @@ private:
 
         vkCmdEndRenderPass(commandBuffer);
 
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
             throw std::runtime_error("Failed to record command buffer!");
-        }
     }
 
     void InitVulkan()
@@ -566,7 +552,7 @@ private:
 
         vkDestroyCommandPool(m_Device->Get(), m_CommandPool, nullptr);
 
-        m_Device.reset();
+        m_Device.reset(); // Destroy device
 
         vkDestroySurfaceKHR(m_Instance->Get(), m_Surface, nullptr);
 

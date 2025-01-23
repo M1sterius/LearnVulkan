@@ -13,11 +13,13 @@ public:
     Window operator = (const Window&) = delete;
 
     bool ShouldClose() const;
+    void WaitForMinimize() const;
     bool ResizeFlag = false;
 
     inline GLFWwindow* Get() const { return m_Window; }
     inline uint32_t GetWidth() const { return m_Width; }
     inline uint32_t GetHeight() const { return m_Height; }
+    inline VkExtent2D GetExtent() const { return {m_Width, m_Height}; }
 
     VkSurfaceKHR CreateWindowSurface(VkInstance instance);
 private:

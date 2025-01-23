@@ -26,6 +26,18 @@ bool Window::ShouldClose() const
     return glfwWindowShouldClose(m_Window);
 }
 
+void Window::WaitForMinimize() const
+{
+    uint32_t width = GetWidth();
+    uint32_t height = GetHeight();
+    while (width == 0 || height == 0)
+    {
+        width = GetWidth();
+        height = GetHeight();
+        glfwWaitEvents();
+    }
+}
+
 void Window::framebuffer_resize_callback(GLFWwindow* window, int width, int height)
 {
     auto win = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));

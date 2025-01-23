@@ -6,6 +6,7 @@
 #include "Window.hpp"
 #include "VulkanInstance.hpp"
 #include "VulkanDevice.hpp"
+#include "Swapchain.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -45,7 +46,6 @@ static std::vector<char> ReadFile(const std::filesystem::path& path)
     return buffer;
 }
 
-
 class VulkanApp
 {
 public:
@@ -57,7 +57,6 @@ public:
         Cleanup();
     }
 private:
-
     static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
     {
         for (const auto& availableFormat : availableFormats)
@@ -197,14 +196,7 @@ private:
     void RecreateSwapChain()
     {
         // Wait until the window is no longer minimized
-        uint32_t width = m_Window->GetWidth();
-        uint32_t height = m_Window->GetHeight();
-        while (width == 0 || height == 0)
-        {
-            width = m_Window->GetWidth();
-            height = m_Window->GetHeight();
-            glfwWaitEvents();
-        }
+        m_Window->WaitForMinimize();
 
         vkDeviceWaitIdle(m_Device->Get());
 
@@ -256,7 +248,7 @@ private:
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
 
-        VkSubpassDependency dependency{};
+        VkSubpassDependency dependency {};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
         dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -558,8 +550,8 @@ private:
         CreateSwapChain();
         CreateImageViews();
         CreateRenderPass();
-        CreateGraphicsPipeline();
         CreateFramebuffers();
+        CreateGraphicsPipeline();
         CreateCommandPool();
         CreateCommandBuffers();
         CreateSyncObjects();

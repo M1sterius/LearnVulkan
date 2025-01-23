@@ -17,6 +17,8 @@ add_executable(LearnVulkan
         Source/GlobalUtility.hpp
         Source/VulkanDevice.cpp
         Source/VulkanDevice.hpp
+        Source/Swapchain.cpp
+        Source/Swapchain.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

@@ -182,12 +182,12 @@ private:
 
     void CleanUpSwapChain()
     {
-        for (auto& m_SwapChainFramebuffer : m_SwapChainFramebuffers) {
-            vkDestroyFramebuffer(m_Device->Get(), m_SwapChainFramebuffer, nullptr);
+        for (auto& swapChainFramebuffer : m_SwapChainFramebuffers) {
+            vkDestroyFramebuffer(m_Device->Get(), swapChainFramebuffer, nullptr);
         }
 
-        for (auto& m_SwapChainImageView : m_SwapChainImageViews) {
-            vkDestroyImageView(m_Device->Get(), m_SwapChainImageView, nullptr);
+        for (auto& swapChainImageView : m_SwapChainImageViews) {
+            vkDestroyImageView(m_Device->Get(), swapChainImageView, nullptr);
         }
 
         vkDestroySwapchainKHR(m_Device->Get(), m_SwapChain, nullptr);

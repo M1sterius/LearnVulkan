@@ -13,8 +13,7 @@ Swapchain::Swapchain(VulkanDevice* device, VkSurfaceKHR surface, VkExtent2D exte
 
 Swapchain::~Swapchain()
 {
-//    CleanupSwapchain();
-    vkDestroySwapchainKHR(m_Device->Get(), m_Swapchain, nullptr);
+    CleanupSwapchain();
 }
 
 void Swapchain::CreateSwapchain(VkExtent2D extent)
@@ -36,7 +35,7 @@ void Swapchain::CreateSwapchain(VkExtent2D extent)
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
-    createInfo.imageExtent = extent;
+    createInfo.imageExtent = chosenExtent;
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -61,9 +60,8 @@ void Swapchain::CreateSwapchain(VkExtent2D extent)
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(m_Device->Get(), &createInfo, nullptr, &m_Swapchain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(m_Device->Get(), &createInfo, nullptr, &m_Swapchain) != VK_SUCCESS)
         throw std::runtime_error("Failed to create swap chain!");
-    }
 
     // Create swapchain images
     vkGetSwapchainImagesKHR(m_Device->Get(), m_Swapchain, &imageCount, nullptr);
@@ -116,20 +114,18 @@ VkExtent2D Swapchain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilit
 
 void Swapchain::Recreate(VkExtent2D newExtent)
 {
-
+    CleanupSwapchain();
+    CreateSwapchain(newExtent);
+    CreateImageViews();
 }
 
 void Swapchain::CleanupSwapchain()
 {
-//    for (auto& m_SwapChainFramebuffer : m_SwapChainFramebuffers) {
-//        vkDestroyFramebuffer(m_Device->Get(), m_SwapChainFramebuffer, nullptr);
-//    }
-//
-//    for (auto& m_SwapChainImageView : m_SwapChainImageViews) {
-//        vkDestroyImageView(m_Device->Get(), m_SwapChainImageView, nullptr);
-//    }
-//
-//    vkDestroySwapchainKHR(m_Device->Get(), m_SwapChain, nullptr);
+    for (auto& swapChainImageView : m_ImageViews) {
+        vkDestroyImageView(m_Device->Get(), swapChainImageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(m_Device->Get(), m_Swapchain, nullptr);
 }
 
 void Swapchain::CreateImageViews()
@@ -153,8 +149,7 @@ void Swapchain::CreateImageViews()
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(m_Device->Get(), &createInfo, nullptr, &m_ImageViews[i]) != VK_SUCCESS) {
+        if (vkCreateImageView(m_Device->Get(), &createInfo, nullptr, &m_ImageViews[i]) != VK_SUCCESS)
             throw std::runtime_error("failed to create image views!");
-        }
     }
 }

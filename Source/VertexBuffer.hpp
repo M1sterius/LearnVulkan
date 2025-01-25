@@ -59,8 +59,10 @@ public:
 
     inline VkBuffer Get() const { return m_Buffer; }
     inline VkDeviceMemory GetMemory() const { return m_BufferMemory; }
+    inline uint32_t GetVerticesCount() const { return m_VerticesCount; }
 private:
     VulkanDevice* m_Device;
     VkBuffer m_Buffer = VK_NULL_HANDLE;
     VkDeviceMemory m_BufferMemory = VK_NULL_HANDLE;
+    uint32_t m_VerticesCount = 0;
 };

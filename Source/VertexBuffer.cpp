@@ -2,7 +2,7 @@
 #include "VulkanDevice.hpp"
 
 VertexBuffer::VertexBuffer(VulkanDevice* device, const std::vector<Vertex>& vertices)
-    :   m_Device(device)
+    :   m_Device(device), m_VerticesCount(vertices.size())
 {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 

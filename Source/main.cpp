@@ -50,9 +50,15 @@ static std::vector<char> ReadFile(const std::filesystem::path& path)
 }
 
 const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}
+};
+
+const std::vector<uint32_t> indices = {
+    0, 1, 2,
+    2, 3, 0
 };
 
 class VulkanApp
@@ -393,9 +399,11 @@ private:
 
         VkBuffer vertexBuffers[] = {m_VertexBuffer->Get()};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-        vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Get(), 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndicesCount(), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -413,6 +421,7 @@ private:
         CreateFramebuffers();
         CreateGraphicsPipeline();
         m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
+        m_IndexBuffer = std::make_unique<IndexBuffer>(m_Device.get(), indices);
         CreateCommandBuffers();
         CreateSyncObjects();
     }
@@ -502,6 +511,7 @@ private:
         }
         m_Swapchain.reset(); // Destroy swapchain
 
+        m_IndexBuffer.reset(); // Destroy index buffer
         m_VertexBuffer.reset(); // Destroy vertex buffer
 
         vkDestroyPipeline(m_Device->Get(), m_Pipeline, nullptr);
@@ -536,6 +546,7 @@ private:
     VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_Pipeline = VK_NULL_HANDLE;
     std::unique_ptr<VertexBuffer> m_VertexBuffer;
+    std::unique_ptr<IndexBuffer> m_IndexBuffer;
     std::vector<VkCommandBuffer> m_CommandBuffers;
     std::vector<VkSemaphore> m_ImageAvailableSemaphores;
     std::vector<VkSemaphore> m_RenderFinishedSemaphores;

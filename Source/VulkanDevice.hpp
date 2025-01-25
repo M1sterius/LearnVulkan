@@ -41,6 +41,7 @@ public:
     inline VkPhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
     inline QueueFamilyIndices GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
     SwapChainSupportDetails GetSwapChainSupportDetails();
+    uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 private:
     VkInstance m_Instance = VK_NULL_HANDLE;
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;

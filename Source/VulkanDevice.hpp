@@ -38,6 +38,7 @@ public:
     inline VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
     inline VkQueue GetPresentQueue() const { return m_PresentQueue; }
     inline VkDevice Get() const { return m_Device; }
+    inline VkCommandPool GetCommandPool() const { return m_CommandPool; }
     inline VkPhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
     inline QueueFamilyIndices GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
     SwapChainSupportDetails GetSwapChainSupportDetails();
@@ -50,6 +51,7 @@ private:
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
     VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
     VkQueue m_PresentQueue = VK_NULL_HANDLE;
+    VkCommandPool m_CommandPool = VK_NULL_HANDLE;
     QueueFamilyIndices m_QueueFamilyIndices;
 
     bool m_EnableValidationLayers;

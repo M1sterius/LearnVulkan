@@ -314,31 +314,18 @@ private:
         CreateFramebuffers();
     }
 
-    void CreateCommandPool()
-    {
-        VkCommandPoolCreateInfo poolInfo { };
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = m_Device->GetQueueFamilyIndices().graphicsFamily.value();
-
-        if (vkCreateCommandPool(m_Device->Get(), &poolInfo, nullptr, &m_CommandPool) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create command pool!");
-        }
-    }
-
     void CreateCommandBuffers()
     {
         m_CommandBuffers.resize(FRAMES_IN_FLIGHT);
 
         VkCommandBufferAllocateInfo allocInfo { };
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = m_CommandPool;
+        allocInfo.commandPool = m_Device->GetCommandPool();
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = FRAMES_IN_FLIGHT;
 
-        if (vkAllocateCommandBuffers(m_Device->Get(), &allocInfo, m_CommandBuffers.data()) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(m_Device->Get(), &allocInfo, m_CommandBuffers.data()) != VK_SUCCESS)
             throw std::runtime_error("Failed to allocate command buffers!");
-        }
     }
 
     void CreateSyncObjects()
@@ -424,7 +411,6 @@ private:
         CreateRenderPass();
         CreateFramebuffers();
         CreateGraphicsPipeline();
-        CreateCommandPool();
         m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
         CreateCommandBuffers();
         CreateSyncObjects();
@@ -529,8 +515,6 @@ private:
             vkDestroyFence(m_Device->Get(), m_InFlightFences[i], nullptr);
         }
 
-        vkDestroyCommandPool(m_Device->Get(), m_CommandPool, nullptr);
-
         m_Device.reset(); // Destroy device
 
         vkDestroySurfaceKHR(m_Instance->Get(), m_Surface, nullptr);
@@ -550,7 +534,6 @@ private:
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;
     VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_Pipeline = VK_NULL_HANDLE;
-    VkCommandPool m_CommandPool = VK_NULL_HANDLE;
     std::unique_ptr<VertexBuffer> m_VertexBuffer;
     std::vector<VkCommandBuffer> m_CommandBuffers;
     std::vector<VkSemaphore> m_ImageAvailableSemaphores;

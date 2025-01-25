@@ -58,6 +58,7 @@ public:
     VertexBuffer operator = (const VertexBuffer&) = delete;
 
     inline VkBuffer Get() const { return m_Buffer; }
+    inline VkDeviceMemory GetMemory() const { return m_BufferMemory; }
 private:
     VulkanDevice* m_Device;
     VkBuffer m_Buffer = VK_NULL_HANDLE;

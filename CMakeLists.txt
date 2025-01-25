@@ -23,6 +23,8 @@ add_executable(LearnVulkan
         Source/GraphicsPipeline.hpp
         Source/VertexBuffer.cpp
         Source/VertexBuffer.hpp
+        Source/IndexBuffer.cpp
+        Source/IndexBuffer.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

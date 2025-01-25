@@ -8,6 +8,7 @@
 #include "VulkanDevice.hpp"
 #include "Swapchain.hpp"
 #include "VertexBuffer.hpp"
+#include "IndexBuffer.hpp"
 
 #include <cstdlib>
 #include <iostream>

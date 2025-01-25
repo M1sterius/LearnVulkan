@@ -15,9 +15,9 @@ VertexBuffer::VertexBuffer(VulkanDevice* device, const std::vector<Vertex>& vert
 
     // Upload vertex data into the staging buffer
     void* data;
-    vkMapMemory(device->Get(), stagingBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(m_Device->Get(), stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, vertices.data(), (size_t)bufferSize);
-    vkUnmapMemory(device->Get(), stagingBufferMemory);
+    vkUnmapMemory(m_Device->Get(), stagingBufferMemory);
 
     // Now create the actual vertex buffer with the most optimal GPU memory type (VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     // This buffer can be used both as transfer destination and as vertex buffer

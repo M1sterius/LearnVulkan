@@ -3,11 +3,11 @@
 #include "glm.hpp"
 #include "Assert.hpp"
 
-#include "GlobalUtility.hpp"
 #include "Window.hpp"
 #include "VulkanInstance.hpp"
 #include "VulkanDevice.hpp"
 #include "Swapchain.hpp"
+#include "VertexBuffer.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -47,41 +47,6 @@ static std::vector<char> ReadFile(const std::filesystem::path& path)
 
     return buffer;
 }
-
-struct Vertex
-{
-    glm::vec2 position;
-    glm::vec3 color;
-
-    static VkVertexInputBindingDescription GetBindingDescription()
-    {
-        VkVertexInputBindingDescription bindingDescription {};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return bindingDescription;
-    }
-
-    static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
-    {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
-
-        // a_Position (location = 0)
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, position);
-
-        // a_Color (location = 1)
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        return attributeDescriptions;
-    }
-};
 
 const std::vector<Vertex> vertices = {
     {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
@@ -361,36 +326,6 @@ private:
         }
     }
 
-    void CreateVertexBuffer()
-    {
-        VkBufferCreateInfo bufferInfo {};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        if (vkCreateBuffer(m_Device->Get(), &bufferInfo, nullptr, &m_VertexBuffer) != VK_SUCCESS)
-            throw std::runtime_error("failed to create vertex buffer!");
-
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_Device->Get(), m_VertexBuffer, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = m_Device->FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-        if (vkAllocateMemory(m_Device->Get(), &allocInfo, nullptr, &m_VertexBufferMemory) != VK_SUCCESS)
-            throw std::runtime_error("failed to allocate vertex buffer memory!");
-
-        vkBindBufferMemory(m_Device->Get(), m_VertexBuffer, m_VertexBufferMemory, 0);
-
-        void* data;
-        vkMapMemory(m_Device->Get(), m_VertexBufferMemory, 0, bufferInfo.size, 0, &data);
-        memcpy(data, vertices.data(), (size_t)bufferInfo.size);
-        vkUnmapMemory(m_Device->Get(), m_VertexBufferMemory);
-    }
-
     void CreateCommandBuffers()
     {
         m_CommandBuffers.resize(FRAMES_IN_FLIGHT);
@@ -468,7 +403,7 @@ private:
         scissor.extent = m_Swapchain->GetExtent();
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        VkBuffer vertexBuffers[] = {m_VertexBuffer};
+        VkBuffer vertexBuffers[] = {m_VertexBuffer->Get()};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
@@ -490,7 +425,7 @@ private:
         CreateFramebuffers();
         CreateGraphicsPipeline();
         CreateCommandPool();
-        CreateVertexBuffer();
+        m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
         CreateCommandBuffers();
         CreateSyncObjects();
     }
@@ -580,8 +515,7 @@ private:
         }
         m_Swapchain.reset(); // Destroy swapchain
 
-        vkDestroyBuffer(m_Device->Get(), m_VertexBuffer, nullptr);
-        vkFreeMemory(m_Device->Get(), m_VertexBufferMemory, nullptr);
+        m_VertexBuffer.reset(); // Destroy vertex buffer
 
         vkDestroyPipeline(m_Device->Get(), m_Pipeline, nullptr);
         vkDestroyPipelineLayout(m_Device->Get(), m_PipelineLayout, nullptr);
@@ -617,8 +551,7 @@ private:
     VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_Pipeline = VK_NULL_HANDLE;
     VkCommandPool m_CommandPool = VK_NULL_HANDLE;
-    VkBuffer m_VertexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory m_VertexBufferMemory = VK_NULL_HANDLE;
+    std::unique_ptr<VertexBuffer> m_VertexBuffer;
     std::vector<VkCommandBuffer> m_CommandBuffers;
     std::vector<VkSemaphore> m_ImageAvailableSemaphores;
     std::vector<VkSemaphore> m_RenderFinishedSemaphores;

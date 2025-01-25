@@ -42,6 +42,9 @@ public:
     inline QueueFamilyIndices GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
     SwapChainSupportDetails GetSwapChainSupportDetails();
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+    void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 private:
     VkInstance m_Instance = VK_NULL_HANDLE;
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
@@ -59,6 +62,7 @@ private:
     void PickPhysicalDevice();
     void CreateLogicalDevice();
     bool IsDeviceSuitable(VkPhysicalDevice device);
+    void CreateCommandPool();
 
     static bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
     static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);

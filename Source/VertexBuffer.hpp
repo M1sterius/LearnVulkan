@@ -10,10 +10,10 @@ class VulkanDevice;
 
 struct Vertex
 {
-    glm::vec2 position;
+    glm::vec3 position;
     glm::vec3 color;
 
-    static VkVertexInputBindingDescription GetBindingDescription()
+    inline static VkVertexInputBindingDescription GetBindingDescription()
     {
         /*
          * Apparently it specifies how many vertex buffers will be used inside the shader
@@ -28,14 +28,14 @@ struct Vertex
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+    inline static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
     {
         std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
 
         // a_Position (location = 0)
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, position);
 
         // a_Color (location = 1)

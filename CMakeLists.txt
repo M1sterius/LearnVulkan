@@ -8,23 +8,25 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/Bin)
 
 add_executable(LearnVulkan
+    Dependencies/stb_image/stb_image.cpp
+
     Source/main.cpp
-        Source/Window.cpp
-        Source/Window.hpp
-        Source/VulkanInstance.cpp
-        Source/VulkanInstance.hpp
-        Source/GlobalUtility.cpp
-        Source/GlobalUtility.hpp
-        Source/VulkanDevice.cpp
-        Source/VulkanDevice.hpp
-        Source/Swapchain.cpp
-        Source/Swapchain.hpp
-        Source/GraphicsPipeline.cpp
-        Source/GraphicsPipeline.hpp
-        Source/VertexBuffer.cpp
-        Source/VertexBuffer.hpp
-        Source/IndexBuffer.cpp
-        Source/IndexBuffer.hpp
+    Source/Window.cpp
+    Source/Window.hpp
+    Source/VulkanInstance.cpp
+    Source/VulkanInstance.hpp
+    Source/GlobalUtility.cpp
+    Source/GlobalUtility.hpp
+    Source/VulkanDevice.cpp
+    Source/VulkanDevice.hpp
+    Source/Swapchain.cpp
+    Source/Swapchain.hpp
+    Source/VertexBuffer.cpp
+    Source/VertexBuffer.hpp
+    Source/IndexBuffer.cpp
+    Source/IndexBuffer.hpp
+    Source/Texture.cpp
+    Source/Texture.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -50,4 +52,5 @@ target_include_directories(LearnVulkan PRIVATE
     ${VULKAN_SDK_PATH}/Include
     ${DEPENDENCIES_DIR}/glm
     ${DEPENDENCIES_DIR}/glfw/include
+    ${DEPENDENCIES_DIR}/stb_image
 )

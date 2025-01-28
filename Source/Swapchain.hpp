@@ -22,6 +22,8 @@ public:
     std::vector<VkImage>& GetImages() { return m_Images; }
     std::vector<VkImageView>& GetImageViews() { return m_ImageViews; }
 
+    VkResult AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex);
+
     void Recreate(VkExtent2D newExtent);
 private:
     void CreateSwapchain(VkExtent2D extent);

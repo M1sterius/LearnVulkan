@@ -153,3 +153,8 @@ void Swapchain::CreateImageViews()
             throw std::runtime_error("failed to create image views!");
     }
 }
+
+VkResult Swapchain::AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex)
+{
+    return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+}

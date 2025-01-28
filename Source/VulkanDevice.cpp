@@ -59,6 +59,7 @@ void VulkanDevice::PickPhysicalDevice()
         {
             m_PhysicalDevice = device;
             m_QueueFamilyIndices = FindQueueFamilies(device, m_Surface);
+            vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_PhysicalDeviceProperties);
             break;
         }
     }

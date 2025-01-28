@@ -40,6 +40,7 @@ public:
     inline VkDevice Get() const { return m_Device; }
     inline VkCommandPool GetCommandPool() const { return m_CommandPool; }
     inline VkPhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
+    inline VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const { return m_PhysicalDeviceProperties; }
     inline QueueFamilyIndices GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
     SwapChainSupportDetails GetSwapChainSupportDetails();
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -60,13 +61,14 @@ private:
     VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
     VkQueue m_PresentQueue = VK_NULL_HANDLE;
     VkCommandPool m_CommandPool = VK_NULL_HANDLE;
+    VkPhysicalDeviceProperties m_PhysicalDeviceProperties;
     QueueFamilyIndices m_QueueFamilyIndices;
-
-    bool m_EnableValidationLayers;
 
     std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
     VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
     VkDevice m_Device = VK_NULL_HANDLE;
+
+    bool m_EnableValidationLayers;
 
     void FindPhysicalDevices();
     void PickPhysicalDevice();

@@ -10,6 +10,7 @@
 #include "Swapchain.hpp"
 #include "VertexBuffer.hpp"
 #include "IndexBuffer.hpp"
+#include "Texture.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -534,6 +535,7 @@ private:
         CreateGraphicsPipeline();
         m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
         m_IndexBuffer = std::make_unique<IndexBuffer>(m_Device.get(), indices);
+        m_Texture = std::make_unique<Texture>(m_Device.get(), "texture.jpg");
         CreateUniformBuffers();
         CreateDescriptorPool();
         CreateDescriptorSets();
@@ -640,6 +642,7 @@ private:
 
         m_IndexBuffer.reset(); // Destroy index buffer
         m_VertexBuffer.reset(); // Destroy vertex buffer
+        m_Texture.reset(); // Destroy texture
 
         vkDestroyPipeline(m_Device->Get(), m_Pipeline, nullptr);
         vkDestroyPipelineLayout(m_Device->Get(), m_PipelineLayout, nullptr);
@@ -669,6 +672,7 @@ private:
     std::unique_ptr<Swapchain> m_Swapchain;
     std::unique_ptr<VertexBuffer> m_VertexBuffer;
     std::unique_ptr<IndexBuffer> m_IndexBuffer;
+    std::unique_ptr<Texture> m_Texture;
 
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;

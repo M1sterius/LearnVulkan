@@ -396,6 +396,27 @@ private:
         vkDestroyShaderModule(m_Device->Get(), vertShaderModule, nullptr);
     }
 
+    void CreateTextureSampler()
+    {
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        samplerInfo.maxAnisotropy = m_Device->GetPhysicalDeviceProperties().limits.maxSamplerAnisotropy;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+        if (vkCreateSampler(m_Device->Get(), &samplerInfo, nullptr, &m_TextureSampler) != VK_SUCCESS)
+            throw std::runtime_error("Failed to create texture sampler!");
+    }
+
     void CreateFramebuffers()
     {
         m_SwapChainFramebuffers.resize(m_Swapchain->GetImageViews().size());
@@ -536,6 +557,7 @@ private:
         m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
         m_IndexBuffer = std::make_unique<IndexBuffer>(m_Device.get(), indices);
         m_Texture = std::make_unique<Texture>(m_Device.get(), "texture.jpg");
+        CreateTextureSampler();
         CreateUniformBuffers();
         CreateDescriptorPool();
         CreateDescriptorSets();
@@ -644,6 +666,8 @@ private:
         m_VertexBuffer.reset(); // Destroy vertex buffer
         m_Texture.reset(); // Destroy texture
 
+        vkDestroySampler(m_Device->Get(), m_TextureSampler, nullptr);
+
         vkDestroyPipeline(m_Device->Get(), m_Pipeline, nullptr);
         vkDestroyPipelineLayout(m_Device->Get(), m_PipelineLayout, nullptr);
 
@@ -680,6 +704,7 @@ private:
     VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_Pipeline = VK_NULL_HANDLE;
     VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
+    VkSampler m_TextureSampler = VK_NULL_HANDLE;
 
     std::vector<VkDescriptorSet> m_DescriptorSets;
     std::vector<VkBuffer> m_UniformBuffers;

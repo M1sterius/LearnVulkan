@@ -181,6 +181,11 @@ void Swapchain::CreateSyncObjects()
 
 VkResult Swapchain::AcquireNextImage(uint32_t* imageIndex)
 {
+    /*
+     * Wait for the previous frame to finish,
+     * Acquire the next image and submit a semaphore to be signaled once the image is successfully acquired
+     */
+
     vkWaitForFences(m_Device->Get(), 1, &m_InFlightFences[m_FramesIndex], VK_TRUE, UINT64_MAX);
     return vkAcquireNextImageKHR(m_Device->Get(), m_Swapchain, UINT64_MAX, m_ImageAvailableSemaphores[m_FramesIndex], VK_NULL_HANDLE, imageIndex);
 }
@@ -205,6 +210,11 @@ void Swapchain::SubmitCommandBuffer(VkCommandBuffer commandBuffer)
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
+    /*
+     * Wait on semaphore until the next swapchain image is successfully acquired,
+     * Submit a semaphore to be signaled once the rendering is finished
+     */
+
     if (vkQueueSubmit(m_Device->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_FramesIndex]) != VK_SUCCESS)
         throw std::runtime_error("Failed to submit draw command buffer!");
 }
@@ -224,10 +234,33 @@ VkResult Swapchain::Present()
 
     m_FramesIndex = (m_FramesIndex + 1) % FramesInFlight;
 
+    /*
+     * Wait on semaphore until the rendering is finished before presenting the frame
+     */
+
     return vkQueuePresentKHR(m_Device->GetPresentQueue(), &presentInfo);;
 }
 
 void Swapchain::ResetFence()
 {
+    /*
+     * Reset the fence into the signaled state so that the CPU will wait on the previous frame to finish rendering
+     */
+
     vkResetFences(m_Device->Get(), 1, &m_InFlightFences[m_FramesIndex]);
+}
+
+void Swapchain::CreateDepthResources()
+{
+
+}
+
+void Swapchain::CreateFramebuffers()
+{
+
+}
+
+void Swapchain::CreateRenderPass()
+{
+
 }

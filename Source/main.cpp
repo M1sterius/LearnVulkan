@@ -640,8 +640,6 @@ private:
         {
             throw std::runtime_error("failed to present swap chain image!");
         }
-
-//        m_CurrentFrame = (m_CurrentFrame + 1) % FRAMES_IN_FLIGHT;
     }
 
     void MainLoop()
@@ -732,7 +730,7 @@ private:
     std::vector<VkFence> m_InFlightFences;
 
     std::vector<VkFramebuffer> m_SwapChainFramebuffers;
-//    uint32_t m_CurrentFrame = 0;
+    uint32_t m_FrameCounter = 0;
 };
 
 int32_t main(int32_t argc, char* argv[])

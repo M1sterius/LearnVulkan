@@ -35,6 +35,9 @@ private:
     void CreateSwapchain(VkExtent2D extent);
     void CreateImageViews();
     void CreateSyncObjects();
+    void CreateDepthResources();
+    void CreateFramebuffers();
+    void CreateRenderPass();
     void CleanupSwapchain();
 
     VulkanDevice* m_Device = nullptr;
@@ -42,9 +45,9 @@ private:
     VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
     VkFormat m_SwapChainFormat {};
     VkExtent2D m_SwapChainExtent {};
+    uint32_t m_FramesIndex = 0;
     std::vector<VkImage> m_Images;
     std::vector<VkImageView> m_ImageViews;
-    uint32_t m_FramesIndex = 0;
 
     std::vector<VkSemaphore> m_ImageAvailableSemaphores;
     std::vector<VkSemaphore> m_RenderFinishedSemaphores;

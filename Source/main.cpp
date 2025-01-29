@@ -13,6 +13,7 @@
 #include "VertexBuffer.hpp"
 #include "IndexBuffer.hpp"
 #include "Texture.hpp"
+#include "Shader.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -33,25 +34,6 @@
 #else
     constexpr bool EnableValidationLayers = true;
 #endif
-
-static std::vector<char> ReadFile(const std::filesystem::path& path)
-{
-    auto file = std::ifstream(path, std::ios::ate | std::ios::binary);
-
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + path.string());
-    }
-
-    const auto fileSize = static_cast<size_t>(file.tellg());
-    auto buffer = std::vector<char>(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-
-    file.close();
-
-    return buffer;
-}
 
 const std::vector<Vertex> vertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
@@ -105,21 +87,6 @@ private:
     void CreateSurface()
     {
         m_Surface = m_Window->CreateWindowSurface(m_Instance->Get());
-    }
-
-    VkShaderModule CreateShaderModule(const std::vector<char>& bytecode)
-    {
-        VkShaderModuleCreateInfo createInfo { };
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = bytecode.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(bytecode.data());
-
-        VkShaderModule shaderModule;
-        if (vkCreateShaderModule(m_Device->Get(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create shader module!");
-        }
-
-        return shaderModule;
     }
 
     void CreateRenderPass()
@@ -312,25 +279,8 @@ private:
 
     void CreateGraphicsPipeline()
     {
-        const auto vertBytecode = ReadFile("Shaders/simple_shader.vert.spv");
-        const auto fragBytecode = ReadFile("Shaders/simple_shader.frag.spv");
-
-        const auto vertShaderModule = CreateShaderModule(vertBytecode);
-        const auto fragShaderModule = CreateShaderModule(fragBytecode);
-
-        VkPipelineShaderStageCreateInfo vertShaderStageInfo { };
-        vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module = vertShaderModule;
-        vertShaderStageInfo.pName = "main";
-
-        VkPipelineShaderStageCreateInfo fragShaderStageInfo { };
-        fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageInfo.module = fragShaderModule;
-        fragShaderStageInfo.pName = "main";
-
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+        const auto shader = std::make_unique<Shader>(m_Device.get(), "Shaders/simple_shader.vert.spv", "Shaders/simple_shader.frag.spv");
+        const auto shaderStagesInfo = shader->GetShaderStagesInfo();
 
         // How vertices will be imported from vertex buffer
         VkPipelineVertexInputStateCreateInfo vertexInputInfo { };
@@ -433,8 +383,8 @@ private:
 
         VkGraphicsPipelineCreateInfo pipelineInfo {};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.stageCount = shaderStagesInfo.size();
+        pipelineInfo.pStages = shaderStagesInfo.data();
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
@@ -450,11 +400,7 @@ private:
         pipelineInfo.basePipelineIndex = -1; // Optional
 
         if (vkCreateGraphicsPipelines(m_Device->Get(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
-            throw std::runtime_error("failed to create graphics pipeline!");
-
-        // Must stay at the very end of this function
-        vkDestroyShaderModule(m_Device->Get(), fragShaderModule, nullptr);
-        vkDestroyShaderModule(m_Device->Get(), vertShaderModule, nullptr);
+            throw std::runtime_error("Failed to create graphics pipeline!");
     }
 
     void CreateTextureSampler()

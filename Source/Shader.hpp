@@ -24,7 +24,7 @@ private:
     VulkanDevice* m_Device;
     VkShaderModule m_VertexModule = VK_NULL_HANDLE;
     VkShaderModule m_FragmentModule = VK_NULL_HANDLE;
-    std::array<VkPipelineShaderStageCreateInfo, 2> m_ShaderStagesInfo;
+    std::array<VkPipelineShaderStageCreateInfo, 2> m_ShaderStagesInfo { };
 
     void CreateStagesInfo();
 

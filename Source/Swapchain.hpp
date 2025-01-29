@@ -27,7 +27,7 @@ public:
     inline uint32_t GetCurrentFrame() const { return m_FramesIndex; }
     VkResult AcquireNextImage(uint32_t* imageIndex);
     void SubmitCommandBuffer(VkCommandBuffer commandBuffer);
-    VkResult Present();
+    VkResult Present(uint32_t imageIndex);
     void ResetFence();
 
     void Recreate(VkExtent2D newExtent);

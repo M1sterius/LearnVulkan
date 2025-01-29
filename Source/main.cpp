@@ -605,7 +605,7 @@ private:
 
         m_Swapchain->SubmitCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrame()]);
 
-        result = m_Swapchain->Present();
+        result = m_Swapchain->Present(imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_Window->ResizeFlag)
         {

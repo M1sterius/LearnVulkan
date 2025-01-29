@@ -232,7 +232,7 @@ void Swapchain::SubmitCommandBuffer(VkCommandBuffer commandBuffer)
         throw std::runtime_error("Failed to submit draw command buffer!");
 }
 
-VkResult Swapchain::Present()
+VkResult Swapchain::Present(uint32_t imageIndex)
 {
     VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphores[m_FramesIndex]};
     VkPresentInfoKHR presentInfo { };
@@ -243,7 +243,7 @@ VkResult Swapchain::Present()
     VkSwapchainKHR swapChains[] = {m_Swapchain};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
-    presentInfo.pImageIndices = &m_FramesIndex;
+    presentInfo.pImageIndices = &imageIndex;
 
     m_FramesIndex = (m_FramesIndex + 1) % FramesInFlight;
 

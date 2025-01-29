@@ -16,18 +16,25 @@ public:
     Swapchain(const Swapchain&) = delete;
     Swapchain operator = (const Swapchain&) = delete;
 
+    static constexpr uint32_t FramesInFlight = 2;
+
     inline VkSwapchainKHR Get() const { return m_Swapchain; }
     inline VkFormat GetFormat() const { return m_SwapChainFormat; }
     inline VkExtent2D GetExtent() const { return m_SwapChainExtent; }
     std::vector<VkImage>& GetImages() { return m_Images; }
     std::vector<VkImageView>& GetImageViews() { return m_ImageViews; }
 
-    VkResult AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex);
+    inline uint32_t GetCurrentFrame() const { return m_FramesIndex; }
+    VkResult AcquireNextImage(uint32_t* imageIndex);
+    void SubmitCommandBuffer(VkCommandBuffer commandBuffer);
+    VkResult Present();
+    void ResetFence();
 
     void Recreate(VkExtent2D newExtent);
 private:
     void CreateSwapchain(VkExtent2D extent);
     void CreateImageViews();
+    void CreateSyncObjects();
     void CleanupSwapchain();
 
     VulkanDevice* m_Device = nullptr;
@@ -37,6 +44,11 @@ private:
     VkExtent2D m_SwapChainExtent {};
     std::vector<VkImage> m_Images;
     std::vector<VkImageView> m_ImageViews;
+    uint32_t m_FramesIndex = 0;
+
+    std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+    std::vector<VkSemaphore> m_RenderFinishedSemaphores;
+    std::vector<VkFence> m_InFlightFences;
 
     static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

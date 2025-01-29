@@ -84,11 +84,6 @@ private:
         RecreateFramebuffers();
     }
 
-    void CreateSurface()
-    {
-        m_Surface = m_Window->CreateWindowSurface(m_Instance->Get());
-    }
-
     void CreateRenderPass()
     {
         VkAttachmentDescription colorAttachment { };
@@ -438,9 +433,9 @@ private:
         viewInfo.subresourceRange.layerCount = 1;
 
         VkImageView imageView;
-        if (vkCreateImageView(m_Device->Get(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+
+        if (vkCreateImageView(m_Device->Get(), &viewInfo, nullptr, &imageView) != VK_SUCCESS)
             throw std::runtime_error("failed to create texture image view!");
-        }
 
         return imageView;
     }
@@ -577,7 +572,7 @@ private:
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Get(), 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrame], 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_Swapchain->GetCurrentFrame()], 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndicesCount(), 1, 0, 0, 0);
 
@@ -590,7 +585,7 @@ private:
     void InitVulkan()
     {
         m_Instance = std::make_unique<VulkanInstance>("Vulkan App", EnableValidationLayers);
-        CreateSurface();
+        m_Surface = m_Window->CreateWindowSurface(m_Instance->Get());
         m_Device = std::make_unique<VulkanDevice>(m_Instance->Get(), m_Surface, EnableValidationLayers);
         m_Swapchain = std::make_unique<Swapchain>(m_Device.get(), m_Surface, m_Window->GetExtent());
         CreateDepthResources();
@@ -611,59 +606,30 @@ private:
 
     void RenderFrame()
     {
-        // Wait until the previous frame has finished
-        vkWaitForFences(m_Device->Get(), 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
-
         uint32_t imageIndex;
-        auto result = vkAcquireNextImageKHR(m_Device->Get(), m_Swapchain->Get(), UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+        auto result = m_Swapchain->AcquireNextImage(&imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             RecreateSwapChain();
             return;
         }
-        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
             throw std::runtime_error("Failed to acquire swap chain image!");
         }
 
         // Only reset the fence if we are submitting work
-        vkResetFences(m_Device->Get(), 1, &m_InFlightFences[m_CurrentFrame]);
+        m_Swapchain->ResetFence();
 
-        vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrame], 0);
-        RecordCommandBuffer(m_CommandBuffers[m_CurrentFrame], imageIndex);
+        vkResetCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrame()], 0);
+        RecordCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrame()], imageIndex);
 
-        UpdateUniformBuffer(m_CurrentFrame);
+        UpdateUniformBuffer(m_Swapchain->GetCurrentFrame());
 
-        VkSubmitInfo submitInfo {};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        m_Swapchain->SubmitCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrame()]);
 
-        VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphores[m_CurrentFrame]};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrame];
-
-        VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphores[m_CurrentFrame]};
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-
-        if (vkQueueSubmit(m_Device->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]) != VK_SUCCESS)
-            throw std::runtime_error("Failed to submit draw command buffer!");
-
-        VkPresentInfoKHR presentInfo { };
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
-        VkSwapchainKHR swapChains[] = {m_Swapchain->Get()};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
-
-        result = vkQueuePresentKHR(m_Device->GetPresentQueue(), &presentInfo);
+        result = m_Swapchain->Present();
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_Window->ResizeFlag)
         {
@@ -675,7 +641,7 @@ private:
             throw std::runtime_error("failed to present swap chain image!");
         }
 
-        m_CurrentFrame = (m_CurrentFrame + 1) % FRAMES_IN_FLIGHT;
+//        m_CurrentFrame = (m_CurrentFrame + 1) % FRAMES_IN_FLIGHT;
     }
 
     void MainLoop()
@@ -766,7 +732,7 @@ private:
     std::vector<VkFence> m_InFlightFences;
 
     std::vector<VkFramebuffer> m_SwapChainFramebuffers;
-    uint32_t m_CurrentFrame = 0;
+//    uint32_t m_CurrentFrame = 0;
 };
 
 int32_t main(int32_t argc, char* argv[])

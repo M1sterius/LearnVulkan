@@ -15,7 +15,20 @@ Swapchain::Swapchain(VulkanDevice* device, VkSurfaceKHR surface, VkExtent2D exte
 
 Swapchain::~Swapchain()
 {
-    CleanupSwapchain();
+//    CleanupSwapchain();
+    for (auto& swapChainImageView : m_ImageViews)
+    {
+        vkDestroyImageView(m_Device->Get(), swapChainImageView, nullptr);
+    }
+
+    for (size_t i = 0; i < FramesInFlight; i++)
+    {
+        vkDestroySemaphore(m_Device->Get(), m_ImageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(m_Device->Get(), m_RenderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(m_Device->Get(), m_InFlightFences[i], nullptr);
+    }
+
+    vkDestroySwapchainKHR(m_Device->Get(), m_Swapchain, nullptr);
 }
 
 void Swapchain::CreateSwapchain(VkExtent2D extent)

@@ -501,29 +501,6 @@ private:
             throw std::runtime_error("Failed to allocate command buffers!");
     }
 
-    void CreateSyncObjects()
-    {
-        m_ImageAvailableSemaphores.resize(FRAMES_IN_FLIGHT);
-        m_RenderFinishedSemaphores.resize(FRAMES_IN_FLIGHT);
-        m_InFlightFences.resize(FRAMES_IN_FLIGHT);
-
-        VkSemaphoreCreateInfo semaphoreInfo { };
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-        VkFenceCreateInfo fenceInfo { };
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        for (size_t i = 0; i < FRAMES_IN_FLIGHT; i++)
-        {
-            if (vkCreateSemaphore(m_Device->Get(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(m_Device->Get(), &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(m_Device->Get(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create synchronization objects for a frame!");
-            }
-        }
-    }
-
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t imageIndex)
     {
         VkCommandBufferBeginInfo beginInfo { };
@@ -601,7 +578,6 @@ private:
         CreateDescriptorPool();
         CreateDescriptorSets();
         CreateCommandBuffers();
-        CreateSyncObjects();
     }
 
     void RenderFrame()
@@ -684,13 +660,6 @@ private:
 
         vkDestroyRenderPass(m_Device->Get(), m_RenderPass, nullptr);
 
-        for (size_t i = 0; i < FRAMES_IN_FLIGHT; i++)
-        {
-            vkDestroySemaphore(m_Device->Get(), m_ImageAvailableSemaphores[i], nullptr);
-            vkDestroySemaphore(m_Device->Get(), m_RenderFinishedSemaphores[i], nullptr);
-            vkDestroyFence(m_Device->Get(), m_InFlightFences[i], nullptr);
-        }
-
         m_Device.reset(); // Destroy device
 
         vkDestroySurfaceKHR(m_Instance->Get(), m_Surface, nullptr);
@@ -716,20 +685,19 @@ private:
     VkPipeline m_Pipeline = VK_NULL_HANDLE;
     VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
     VkSampler m_TextureSampler = VK_NULL_HANDLE;
+
     VkImage m_DepthImage = VK_NULL_HANDLE;
     VkDeviceMemory m_DepthImageMemory = VK_NULL_HANDLE;
     VkImageView m_DepthImageView = VK_NULL_HANDLE;
+
+    std::vector<VkFramebuffer> m_SwapChainFramebuffers;
 
     std::vector<VkDescriptorSet> m_DescriptorSets;
     std::vector<VkBuffer> m_UniformBuffers;
     std::vector<VkDeviceMemory> m_UniformBuffersMemory;
     std::vector<void*> m_UniformBuffersMapData;
     std::vector<VkCommandBuffer> m_CommandBuffers;
-    std::vector<VkSemaphore> m_ImageAvailableSemaphores;
-    std::vector<VkSemaphore> m_RenderFinishedSemaphores;
-    std::vector<VkFence> m_InFlightFences;
 
-    std::vector<VkFramebuffer> m_SwapChainFramebuffers;
     uint32_t m_FrameCounter = 0;
 };
 

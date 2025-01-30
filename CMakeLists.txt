@@ -35,6 +35,8 @@ add_executable(LearnVulkan
         Source/Fence.hpp
         Source/Semaphore.cpp
         Source/Semaphore.hpp
+        Source/CommandBuffer.cpp
+        Source/CommandBuffer.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

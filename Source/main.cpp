@@ -15,6 +15,7 @@
 #include "Texture.hpp"
 #include "Shader.hpp"
 #include "Framebuffer.hpp"
+#include "CommandBuffer.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -171,11 +172,11 @@ private:
     {
         VkDeviceSize bufferSize = sizeof(UBO);
 
-        m_UniformBuffers.resize(FRAMES_IN_FLIGHT);
-        m_UniformBuffersMemory.resize(FRAMES_IN_FLIGHT);
-        m_UniformBuffersMapData.resize(FRAMES_IN_FLIGHT);
+        m_UniformBuffers.resize(Swapchain::FramesInFlight);
+        m_UniformBuffersMemory.resize(Swapchain::FramesInFlight);
+        m_UniformBuffersMapData.resize(Swapchain::FramesInFlight);
 
-        for (size_t i = 0; i < FRAMES_IN_FLIGHT; i++)
+        for (size_t i = 0; i < Swapchain::FramesInFlight; i++)
         {
             m_Device->CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_UniformBuffers[i], m_UniformBuffersMemory[i]);
@@ -207,16 +208,16 @@ private:
         std::array<VkDescriptorPoolSize, 2> poolSizes {};
 
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = FRAMES_IN_FLIGHT;
+        poolSizes[0].descriptorCount = Swapchain::FramesInFlight;
 
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = FRAMES_IN_FLIGHT;
+        poolSizes[1].descriptorCount = Swapchain::FramesInFlight;
 
         VkDescriptorPoolCreateInfo poolInfo {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = FRAMES_IN_FLIGHT;
+        poolInfo.maxSets = Swapchain::FramesInFlight;
 
         if (vkCreateDescriptorPool(m_Device->Get(), &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS)
             throw std::runtime_error("failed to create descriptor pool!");
@@ -224,20 +225,20 @@ private:
 
     void CreateDescriptorSets()
     {
-        std::vector<VkDescriptorSetLayout> layouts(FRAMES_IN_FLIGHT, m_DescriptorSetLayout);
+        std::vector<VkDescriptorSetLayout> layouts(Swapchain::FramesInFlight, m_DescriptorSetLayout);
 
         VkDescriptorSetAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_DescriptorPool;
-        allocInfo.descriptorSetCount = FRAMES_IN_FLIGHT;
+        allocInfo.descriptorSetCount = Swapchain::FramesInFlight;
         allocInfo.pSetLayouts = layouts.data();
 
-        m_DescriptorSets.resize(FRAMES_IN_FLIGHT);
+        m_DescriptorSets.resize(Swapchain::FramesInFlight);
 
         if (vkAllocateDescriptorSets(m_Device->Get(), &allocInfo, m_DescriptorSets.data()) != VK_SUCCESS)
             throw std::runtime_error("Failed to allocate descriptor sets!");
 
-        for (size_t i = 0; i < FRAMES_IN_FLIGHT; i++)
+        for (size_t i = 0; i < Swapchain::FramesInFlight; i++)
         {
             VkDescriptorBufferInfo bufferInfo {};
             bufferInfo.buffer = m_UniformBuffers[i];
@@ -471,27 +472,15 @@ private:
 
     void CreateCommandBuffers()
     {
-        m_CommandBuffers.resize(FRAMES_IN_FLIGHT);
-
-        VkCommandBufferAllocateInfo allocInfo { };
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = m_Device->GetCommandPool();
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = FRAMES_IN_FLIGHT;
-
-        if (vkAllocateCommandBuffers(m_Device->Get(), &allocInfo, m_CommandBuffers.data()) != VK_SUCCESS)
-            throw std::runtime_error("Failed to allocate command buffers!");
+        for (size_t i = 0; i < Swapchain::FramesInFlight; i++)
+        {
+            m_CommandBuffers.emplace_back(std::make_unique<CommandBuffer>(m_Device.get()));
+        }
     }
 
-    void RecordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t imageIndex)
+    void RecordCommandBuffer(const std::unique_ptr<CommandBuffer>& commandBuffer, const uint32_t imageIndex)
     {
-        VkCommandBufferBeginInfo beginInfo { };
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0; // Optional
-        beginInfo.pInheritanceInfo = nullptr; // Optional
-
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-            throw std::runtime_error("Failed to begin recording command buffer!");
+        commandBuffer->BeginRecording(0);
 
         VkRenderPassBeginInfo renderPassInfo { };
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -507,9 +496,9 @@ private:
         renderPassInfo.clearValueCount = clearValues.size();
         renderPassInfo.pClearValues = clearValues.data();
 
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(commandBuffer->Get(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+        vkCmdBindPipeline(commandBuffer->Get(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 
         VkViewport viewport {};
         viewport.x = 0.0f;
@@ -518,27 +507,26 @@ private:
         viewport.height = static_cast<float>(m_Swapchain->GetExtent().height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetViewport(commandBuffer->Get(), 0, 1, &viewport);
 
         VkRect2D scissor {};
         scissor.offset = {0, 0};
         scissor.extent = m_Swapchain->GetExtent();
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        vkCmdSetScissor(commandBuffer->Get(), 0, 1, &scissor);
 
         VkBuffer vertexBuffers[] = {m_VertexBuffer->Get()};
         VkDeviceSize offsets[] = {0};
 
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Get(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(commandBuffer->Get(), 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer->Get(), m_IndexBuffer->Get(), 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_Swapchain->GetCurrentFrameIndex()], 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer->Get(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_Swapchain->GetCurrentFrameIndex()], 0, nullptr);
 
-        vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndicesCount(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer->Get(), m_IndexBuffer->GetIndicesCount(), 1, 0, 0, 0);
 
-        vkCmdEndRenderPass(commandBuffer);
+        vkCmdEndRenderPass(commandBuffer->Get());
 
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-            throw std::runtime_error("Failed to record command buffer!");
+        commandBuffer->EndRecording();
     }
 
     void InitVulkan()
@@ -565,6 +553,7 @@ private:
     void RenderFrame()
     {
         uint32_t imageIndex;
+        auto frameIndex = m_Swapchain->GetCurrentFrameIndex();
         auto result = m_Swapchain->AcquireNextImage(&imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -575,14 +564,14 @@ private:
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
             throw std::runtime_error("Failed to acquire swap chain image!");
 
-        auto commandBuffer = m_CommandBuffers[m_Swapchain->GetCurrentFrameIndex()];
-        vkResetCommandBuffer(commandBuffer, 0);
+        auto& commandBuffer = m_CommandBuffers[frameIndex];
+        commandBuffer->Reset(0);
         RecordCommandBuffer(commandBuffer, imageIndex);
 
-        UpdateUniformBuffer(m_Swapchain->GetCurrentFrameIndex());
+        UpdateUniformBuffer(frameIndex);
 
         m_Swapchain->ResetFence(); // Only reset the fence if we are submitting work
-        m_Swapchain->SubmitCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrameIndex()]);
+        m_Swapchain->SubmitCommandBuffer(m_CommandBuffers[frameIndex]->Get());
 
         result = m_Swapchain->Present(imageIndex);
 
@@ -610,16 +599,21 @@ private:
 
     void Cleanup()
     {
+        // Destroy command buffers
+        for (auto& commandBuffer : m_CommandBuffers)
+            commandBuffer.reset();
+
         // Destroy framebuffers
         for (auto& swapChainFramebuffer : m_Framebuffers)
             swapChainFramebuffer.reset();
 
         m_Swapchain.reset(); // Destroy swapchain
+
         vkDestroyImageView(m_Device->Get(), m_DepthImageView, nullptr);
         vkDestroyImage(m_Device->Get(), m_DepthImage, nullptr);
         vkFreeMemory(m_Device->Get(), m_DepthImageMemory, nullptr);
 
-        for (size_t i = 0; i < FRAMES_IN_FLIGHT; i++)
+        for (size_t i = 0; i < Swapchain::FramesInFlight; i++)
         {
             vkDestroyBuffer(m_Device->Get(), m_UniformBuffers[i], nullptr);
             vkFreeMemory(m_Device->Get(), m_UniformBuffersMemory[i], nullptr);
@@ -647,8 +641,6 @@ private:
         m_Window.reset(); // Destroy window
     }
 
-    static constexpr uint32_t FRAMES_IN_FLIGHT = 2;
-
     std::unique_ptr<Window> m_Window;
     std::unique_ptr<VulkanInstance> m_Instance;
     std::unique_ptr<VulkanDevice> m_Device;
@@ -670,12 +662,11 @@ private:
     VkImageView m_DepthImageView = VK_NULL_HANDLE;
 
     std::vector<std::unique_ptr<Framebuffer>> m_Framebuffers;
-
     std::vector<VkDescriptorSet> m_DescriptorSets;
     std::vector<VkBuffer> m_UniformBuffers;
     std::vector<VkDeviceMemory> m_UniformBuffersMemory;
     std::vector<void*> m_UniformBuffersMapData;
-    std::vector<VkCommandBuffer> m_CommandBuffers;
+    std::vector<std::unique_ptr<CommandBuffer>> m_CommandBuffers;
 
     uint32_t m_FrameCounter = 0;
 };

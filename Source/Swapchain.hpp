@@ -6,6 +6,8 @@
 #include <vector>
 
 class VulkanDevice;
+class Fence;
+class Semaphore;
 
 class Swapchain
 {
@@ -21,6 +23,7 @@ public:
     inline VkSwapchainKHR Get() const { return m_Swapchain; }
     inline VkFormat GetFormat() const { return m_SwapChainFormat; }
     inline VkExtent2D GetExtent() const { return m_SwapChainExtent; }
+
     std::vector<VkImage>& GetImages() { return m_Images; }
     std::vector<VkImageView>& GetImageViews() { return m_ImageViews; }
 
@@ -46,9 +49,9 @@ private:
     std::vector<VkImage> m_Images;
     std::vector<VkImageView> m_ImageViews;
 
-    std::vector<VkSemaphore> m_ImageAvailableSemaphores;
-    std::vector<VkSemaphore> m_RenderFinishedSemaphores;
-    std::vector<VkFence> m_InFlightFences;
+    std::vector<std::unique_ptr<Semaphore>> m_ImageAvailableSemaphores;
+    std::vector<std::unique_ptr<Semaphore>> m_RenderFinishedSemaphores;
+    std::vector<std::unique_ptr<Fence>> m_InFlightFences;
 
     static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

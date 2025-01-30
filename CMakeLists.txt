@@ -31,6 +31,10 @@ add_executable(LearnVulkan
         Source/Shader.hpp
         Source/Framebuffer.cpp
         Source/Framebuffer.hpp
+        Source/Fence.cpp
+        Source/Fence.hpp
+        Source/Semaphore.cpp
+        Source/Semaphore.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

@@ -18,5 +18,5 @@ public:
     inline VkFramebuffer Get() const { return m_Framebuffer; }
 private:
     VulkanDevice* m_Device;
-    VkFramebuffer m_Framebuffer = VK_NULL_HANDLE;
+    VkFramebuffer m_Framebuffer = nullptr;
 };

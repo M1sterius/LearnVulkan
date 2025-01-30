@@ -14,6 +14,7 @@
 #include "IndexBuffer.hpp"
 #include "Texture.hpp"
 #include "Shader.hpp"
+#include "Framebuffer.hpp"
 
 #include <cstdlib>
 #include <iostream>

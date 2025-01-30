@@ -29,6 +29,8 @@ add_executable(LearnVulkan
     Source/Texture.hpp
         Source/Shader.cpp
         Source/Shader.hpp
+        Source/Framebuffer.cpp
+        Source/Framebuffer.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

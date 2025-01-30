@@ -14,6 +14,10 @@ struct Vertex
     glm::vec3 color;
     glm::vec2 texCoords;
 
+    Vertex() = default;
+    Vertex(const glm::vec3& position, const glm::vec3& color, const glm::vec2& texCoords)
+        :   position(position), color(color), texCoords(texCoords) { }
+
     inline static VkVertexInputBindingDescription GetBindingDescription()
     {
         /*

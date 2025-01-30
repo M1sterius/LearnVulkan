@@ -37,6 +37,8 @@ add_executable(LearnVulkan
         Source/Semaphore.hpp
         Source/CommandBuffer.cpp
         Source/CommandBuffer.hpp
+        Source/Mesh.cpp
+        Source/Mesh.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -63,6 +65,7 @@ target_include_directories(LearnVulkan PRIVATE
     ${DEPENDENCIES_DIR}/glm
     ${DEPENDENCIES_DIR}/glfw/include
     ${DEPENDENCIES_DIR}/stb_image
+    ${DEPENDENCIES_DIR}/obj_loader
 )
 
 set(COPY_OUT_DIR ${CMAKE_SOURCE_DIR}/Bin/Assets)

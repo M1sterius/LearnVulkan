@@ -16,6 +16,7 @@
 #include "Shader.hpp"
 #include "Framebuffer.hpp"
 #include "CommandBuffer.hpp"
+#include "Mesh.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -247,7 +248,7 @@ private:
 
             VkDescriptorImageInfo imageInfo {};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = m_Texture->GetImageView();
+            imageInfo.imageView = m_Mesh->GetTexture().GetImageView();
             imageInfo.sampler = m_TextureSampler;
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites {};
@@ -514,15 +515,18 @@ private:
         scissor.extent = m_Swapchain->GetExtent();
         vkCmdSetScissor(commandBuffer->Get(), 0, 1, &scissor);
 
-        VkBuffer vertexBuffers[] = {m_VertexBuffer->Get()};
+        auto& vertexBuffer = m_Mesh->GetVertexBuffer();
+        auto& indexBuffer = m_Mesh->GetIndexBuffer();
+
+        VkBuffer vertexBuffers[] = {vertexBuffer.Get()};
         VkDeviceSize offsets[] = {0};
 
         vkCmdBindVertexBuffers(commandBuffer->Get(), 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer->Get(), m_IndexBuffer->Get(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer->Get(), indexBuffer.Get(), 0, VK_INDEX_TYPE_UINT32);
 
         vkCmdBindDescriptorSets(commandBuffer->Get(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_Swapchain->GetCurrentFrameIndex()], 0, nullptr);
 
-        vkCmdDrawIndexed(commandBuffer->Get(), m_IndexBuffer->GetIndicesCount(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer->Get(), indexBuffer.GetIndicesCount(), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer->Get());
 
@@ -540,9 +544,10 @@ private:
         CreateFramebuffers();
         CreateDescriptorSetLayout();
         CreateGraphicsPipeline();
-        m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
-        m_IndexBuffer = std::make_unique<IndexBuffer>(m_Device.get(), indices);
-        m_Texture = std::make_unique<Texture>(m_Device.get(), "Assets/texture.jpg");
+//        m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
+//        m_IndexBuffer = std::make_unique<IndexBuffer>(m_Device.get(), indices);
+//        m_Texture = std::make_unique<Texture>(m_Device.get(), "Assets/texture.jpg");
+        m_Mesh = std::make_unique<Mesh>(m_Device.get(), "Assets/viking_room.obj", "Assets/viking_room.png");
         CreateTextureSampler();
         CreateUniformBuffers();
         CreateDescriptorPool();
@@ -622,9 +627,10 @@ private:
         vkDestroyDescriptorPool(m_Device->Get(), m_DescriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(m_Device->Get(), m_DescriptorSetLayout, nullptr);
 
-        m_IndexBuffer.reset(); // Destroy index buffer
-        m_VertexBuffer.reset(); // Destroy vertex buffer
-        m_Texture.reset(); // Destroy texture
+//        m_IndexBuffer.reset(); // Destroy index buffer
+//        m_VertexBuffer.reset(); // Destroy vertex buffer
+//        m_Texture.reset(); // Destroy texture
+        m_Mesh.reset();
 
         vkDestroySampler(m_Device->Get(), m_TextureSampler, nullptr);
 
@@ -645,9 +651,10 @@ private:
     std::unique_ptr<VulkanInstance> m_Instance;
     std::unique_ptr<VulkanDevice> m_Device;
     std::unique_ptr<Swapchain> m_Swapchain;
-    std::unique_ptr<VertexBuffer> m_VertexBuffer;
-    std::unique_ptr<IndexBuffer> m_IndexBuffer;
-    std::unique_ptr<Texture> m_Texture;
+//    std::unique_ptr<VertexBuffer> m_VertexBuffer;
+//    std::unique_ptr<IndexBuffer> m_IndexBuffer;
+//    std::unique_ptr<Texture> m_Texture;
+    std::unique_ptr<Mesh> m_Mesh;
 
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;

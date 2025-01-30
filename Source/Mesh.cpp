@@ -7,6 +7,8 @@
 #include "Texture.hpp"
 #include "obj_loader.h"
 
+#include "gtx/string_cast.hpp"
+
 Mesh::Mesh(VulkanDevice* device, std::filesystem::path objPath, const std::filesystem::path& texturePath)
     :   m_Device(device), m_ObjPath(std::move(objPath)), m_TexturePath(texturePath)
 {
@@ -25,13 +27,15 @@ void Mesh::LoadMesh()
 
     auto vertices = std::vector<Vertex>(loader.LoadedVertices.size());
 
-    for (auto loaderVertex : loader.LoadedVertices)
+    for (size_t i = 0; i < loader.LoadedVertices.size(); i++)
     {
+        const auto& loaderVertex = loader.LoadedVertices[i];
+
         const auto position = glm::vec3(loaderVertex.Position.X, loaderVertex.Position.Y, loaderVertex.Position.Z);
         const auto color = glm::vec3(0.0f);
         const auto texCoords = glm::vec2(loaderVertex.TextureCoordinate.X, loaderVertex.TextureCoordinate.Y);
 
-        vertices.emplace_back(position, color, texCoords);
+        vertices[i] = Vertex(position, color, texCoords);
     }
 
     m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device, vertices);

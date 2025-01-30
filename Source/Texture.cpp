@@ -6,6 +6,8 @@ Texture::Texture(VulkanDevice* device, const std::filesystem::path& path)
     :   m_Device(device)
 {
 
+    stbi_set_flip_vertically_on_load(true);
+
     // Load a texture from file into a CPU side buffer
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);

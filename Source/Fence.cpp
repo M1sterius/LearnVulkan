@@ -21,3 +21,8 @@ void Fence::Reset()
 {
     vkResetFences(m_Device->Get(), 1, &m_Fence);
 }
+
+void Fence::Wait(uint64_t timeout)
+{
+    vkWaitForFences(m_Device->Get(), 1, &m_Fence, VK_TRUE, timeout);
+}

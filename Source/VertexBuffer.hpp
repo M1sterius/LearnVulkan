@@ -11,12 +11,11 @@ class VulkanDevice;
 struct Vertex
 {
     glm::vec3 position;
-    glm::vec3 color;
     glm::vec2 texCoords;
 
     Vertex() = default;
-    Vertex(const glm::vec3& position, const glm::vec3& color, const glm::vec2& texCoords)
-        :   position(position), color(color), texCoords(texCoords) { }
+    Vertex(const glm::vec3& position, const glm::vec2& texCoords)
+        :   position(position), texCoords(texCoords) { }
 
     inline static VkVertexInputBindingDescription GetBindingDescription()
     {
@@ -25,6 +24,7 @@ struct Vertex
          * Something like bind multiple VBOs to a single VAO in OpenGL
          * There we use only one vertex buffer in the shader so we have a single binding description
          */
+
         VkVertexInputBindingDescription bindingDescription {};
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(Vertex);
@@ -33,9 +33,9 @@ struct Vertex
         return bindingDescription;
     }
 
-    inline static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
+    inline static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions {};
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
 
         // a_Position (location = 0)
         attributeDescriptions[0].binding = 0;
@@ -43,17 +43,11 @@ struct Vertex
         attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, position);
 
-        // a_Color (location = 1)
+        // a_TexCoords (location = 1)
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        // a_TexCoords
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, texCoords);
+        attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Vertex, texCoords);
 
         return attributeDescriptions;
     }

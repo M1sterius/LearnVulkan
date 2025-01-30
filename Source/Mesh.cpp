@@ -32,10 +32,9 @@ void Mesh::LoadMesh()
         const auto& loaderVertex = loader.LoadedVertices[i];
 
         const auto position = glm::vec3(loaderVertex.Position.X, loaderVertex.Position.Y, loaderVertex.Position.Z);
-        const auto color = glm::vec3(0.0f);
         const auto texCoords = glm::vec2(loaderVertex.TextureCoordinate.X, loaderVertex.TextureCoordinate.Y);
 
-        vertices[i] = Vertex(position, color, texCoords);
+        vertices[i] = Vertex(position, texCoords);
     }
 
     m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device, vertices);

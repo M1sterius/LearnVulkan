@@ -38,23 +38,6 @@
     constexpr bool EnableValidationLayers = true;
 #endif
 
-const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-};
-
-const std::vector<uint32_t> indices = {
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
-};
-
 struct UBO
 {
     glm::mat4 MVP;
@@ -347,7 +330,7 @@ private:
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
 
         // Global color blending config
-        VkPipelineColorBlendStateCreateInfo colorBlending{};
+        VkPipelineColorBlendStateCreateInfo colorBlending {};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.logicOp = VK_LOGIC_OP_COPY;
@@ -544,9 +527,6 @@ private:
         CreateFramebuffers();
         CreateDescriptorSetLayout();
         CreateGraphicsPipeline();
-//        m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
-//        m_IndexBuffer = std::make_unique<IndexBuffer>(m_Device.get(), indices);
-//        m_Texture = std::make_unique<Texture>(m_Device.get(), "Assets/texture.jpg");
         m_Mesh = std::make_unique<Mesh>(m_Device.get(), "Assets/viking_room.obj", "Assets/viking_room.png");
         CreateTextureSampler();
         CreateUniformBuffers();
@@ -627,10 +607,7 @@ private:
         vkDestroyDescriptorPool(m_Device->Get(), m_DescriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(m_Device->Get(), m_DescriptorSetLayout, nullptr);
 
-//        m_IndexBuffer.reset(); // Destroy index buffer
-//        m_VertexBuffer.reset(); // Destroy vertex buffer
-//        m_Texture.reset(); // Destroy texture
-        m_Mesh.reset();
+        m_Mesh.reset(); // destroy mesh
 
         vkDestroySampler(m_Device->Get(), m_TextureSampler, nullptr);
 
@@ -651,9 +628,6 @@ private:
     std::unique_ptr<VulkanInstance> m_Instance;
     std::unique_ptr<VulkanDevice> m_Device;
     std::unique_ptr<Swapchain> m_Swapchain;
-//    std::unique_ptr<VertexBuffer> m_VertexBuffer;
-//    std::unique_ptr<IndexBuffer> m_IndexBuffer;
-//    std::unique_ptr<Texture> m_Texture;
     std::unique_ptr<Mesh> m_Mesh;
 
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;

@@ -441,27 +441,10 @@ private:
 
     void CreateFramebuffers()
     {
-        m_SwapChainFramebuffers.resize(m_Swapchain->GetImageViews().size());
-
         for (size_t i = 0; i < m_Swapchain->GetImageViews().size(); i++)
         {
-            std::array<VkImageView, 2> attachments = {
-                m_Swapchain->GetImageViews()[i],
-                m_DepthImageView
-            };
-
-            VkFramebufferCreateInfo framebufferInfo {};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = m_RenderPass;
-            framebufferInfo.attachmentCount = attachments.size();
-            framebufferInfo.pAttachments = attachments.data();
-            framebufferInfo.width = m_Swapchain->GetExtent().width;
-            framebufferInfo.height = m_Swapchain->GetExtent().height;
-            framebufferInfo.layers = 1;
-
-            if (vkCreateFramebuffer(m_Device->Get(), &framebufferInfo, nullptr, &m_SwapChainFramebuffers[i]) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create framebuffer!");
-            }
+            const std::vector<VkImageView> attachments = {m_Swapchain->GetImageViews()[i], m_DepthImageView};
+            m_Framebuffers.emplace_back(std::make_unique<Framebuffer>(m_Device.get(), m_RenderPass, attachments, m_Swapchain->GetExtent()));
         }
     }
 
@@ -479,9 +462,9 @@ private:
     void RecreateFramebuffers()
     {
         // Cleanup old framebuffers
-        for (auto& swapChainFramebuffer : m_SwapChainFramebuffers) {
-            vkDestroyFramebuffer(m_Device->Get(), swapChainFramebuffer, nullptr);
-        }
+        for (auto& swapChainFramebuffer : m_Framebuffers)
+            swapChainFramebuffer.reset();
+        m_Framebuffers.clear(); // make sure that there are no traces of old framebuffers in the vector
 
         CreateFramebuffers();
     }
@@ -513,7 +496,7 @@ private:
         VkRenderPassBeginInfo renderPassInfo { };
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = m_RenderPass;
-        renderPassInfo.framebuffer = m_SwapChainFramebuffers[imageIndex];
+        renderPassInfo.framebuffer = m_Framebuffers[imageIndex]->Get();
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = m_Swapchain->GetExtent();
 
@@ -628,9 +611,9 @@ private:
     void Cleanup()
     {
         // Destroy framebuffers
-        for (auto& swapChainFramebuffer : m_SwapChainFramebuffers) {
-            vkDestroyFramebuffer(m_Device->Get(), swapChainFramebuffer, nullptr);
-        }
+        for (auto& swapChainFramebuffer : m_Framebuffers)
+            swapChainFramebuffer.reset();
+
         m_Swapchain.reset(); // Destroy swapchain
         vkDestroyImageView(m_Device->Get(), m_DepthImageView, nullptr);
         vkDestroyImage(m_Device->Get(), m_DepthImage, nullptr);
@@ -686,7 +669,7 @@ private:
     VkDeviceMemory m_DepthImageMemory = VK_NULL_HANDLE;
     VkImageView m_DepthImageView = VK_NULL_HANDLE;
 
-    std::vector<VkFramebuffer> m_SwapChainFramebuffers;
+    std::vector<std::unique_ptr<Framebuffer>> m_Framebuffers;
 
     std::vector<VkDescriptorSet> m_DescriptorSets;
     std::vector<VkBuffer> m_UniformBuffers;

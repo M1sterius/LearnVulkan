@@ -13,6 +13,9 @@ Framebuffer::Framebuffer(VulkanDevice* device, VkRenderPass renderPass, const st
     framebufferInfo.width = extent.width;
     framebufferInfo.height = extent.height;
     framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(m_Device->Get(), &framebufferInfo, nullptr, &m_Framebuffer) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create framebuffer!");
 }
 
 Framebuffer::~Framebuffer()

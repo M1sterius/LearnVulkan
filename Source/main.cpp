@@ -68,11 +68,9 @@ public:
         Cleanup();
     }
 private:
-    void RecreateSwapChain()
+    void OnSwapchainRecreateRequired()
     {
-        // Wait until the window is no longer minimized
-        m_Window->WaitForMinimize();
-
+        m_Window->WaitForMinimize(); // Wait until the window is no longer minimized
         vkDeviceWaitIdle(m_Device->Get());
 
         vkDestroyImageView(m_Device->Get(), m_DepthImageView, nullptr);
@@ -421,7 +419,7 @@ private:
 
     VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
     {
-        VkImageViewCreateInfo viewInfo{};
+        VkImageViewCreateInfo viewInfo {};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = image;
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -549,7 +547,7 @@ private:
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Get(), 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_Swapchain->GetCurrentFrame()], 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_Swapchain->GetCurrentFrameIndex()], 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndicesCount(), 1, 0, 0, 0);
 
@@ -587,29 +585,26 @@ private:
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            RecreateSwapChain();
+            OnSwapchainRecreateRequired();
             return;
         }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        {
             throw std::runtime_error("Failed to acquire swap chain image!");
-        }
 
-        // Only reset the fence if we are submitting work
-        m_Swapchain->ResetFence();
+        auto commandBuffer = m_CommandBuffers[m_Swapchain->GetCurrentFrameIndex()];
+        vkResetCommandBuffer(commandBuffer, 0);
+        RecordCommandBuffer(commandBuffer, imageIndex);
 
-        vkResetCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrame()], 0);
-        RecordCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrame()], imageIndex);
+        UpdateUniformBuffer(m_Swapchain->GetCurrentFrameIndex());
 
-        UpdateUniformBuffer(m_Swapchain->GetCurrentFrame());
-
-        m_Swapchain->SubmitCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrame()]);
+        m_Swapchain->ResetFence(); // Only reset the fence if we are submitting work
+        m_Swapchain->SubmitCommandBuffer(m_CommandBuffers[m_Swapchain->GetCurrentFrameIndex()]);
 
         result = m_Swapchain->Present(imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_Window->ResizeFlag)
         {
-            RecreateSwapChain();
+            OnSwapchainRecreateRequired();
             m_Window->ResizeFlag = false;
         }
         else if (result != VK_SUCCESS)

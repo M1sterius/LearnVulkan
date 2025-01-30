@@ -24,7 +24,7 @@ public:
     std::vector<VkImage>& GetImages() { return m_Images; }
     std::vector<VkImageView>& GetImageViews() { return m_ImageViews; }
 
-    inline uint32_t GetCurrentFrame() const { return m_FramesIndex; }
+    inline uint32_t GetCurrentFrameIndex() const { return m_FrameIndex; }
     VkResult AcquireNextImage(uint32_t* imageIndex);
     void SubmitCommandBuffer(VkCommandBuffer commandBuffer);
     VkResult Present(uint32_t imageIndex);
@@ -35,9 +35,6 @@ private:
     void CreateSwapchain(VkExtent2D extent);
     void CreateImageViews();
     void CreateSyncObjects();
-    void CreateDepthResources();
-    void CreateFramebuffers();
-    void CreateRenderPass();
     void CleanupSwapchain();
 
     VulkanDevice* m_Device = nullptr;
@@ -45,7 +42,7 @@ private:
     VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
     VkFormat m_SwapChainFormat {};
     VkExtent2D m_SwapChainExtent {};
-    uint32_t m_FramesIndex = 0;
+    uint32_t m_FrameIndex = 0;
     std::vector<VkImage> m_Images;
     std::vector<VkImageView> m_ImageViews;
 

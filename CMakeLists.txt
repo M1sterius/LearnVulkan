@@ -64,3 +64,10 @@ target_include_directories(LearnVulkan PRIVATE
     ${DEPENDENCIES_DIR}/glfw/include
     ${DEPENDENCIES_DIR}/stb_image
 )
+
+set(COPY_OUT_DIR ${CMAKE_SOURCE_DIR}/Bin/Assets)
+add_custom_command(TARGET LearnVulkan POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/Assets
+    ${COPY_OUT_DIR}
+)

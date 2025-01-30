@@ -274,7 +274,7 @@ private:
 
     void CreateGraphicsPipeline()
     {
-        const auto shader = std::make_unique<Shader>(m_Device.get(), "Shaders/simple_shader.vert.spv", "Shaders/simple_shader.frag.spv");
+        const auto shader = std::make_unique<Shader>(m_Device.get(), "Assets/Shaders/simple_shader.vert.spv", "Assets/Shaders/simple_shader.frag.spv");
         const auto shaderStagesInfo = shader->GetShaderStagesInfo();
 
         // How vertices will be imported from vertex buffer
@@ -542,7 +542,7 @@ private:
         CreateGraphicsPipeline();
         m_VertexBuffer = std::make_unique<VertexBuffer>(m_Device.get(), vertices);
         m_IndexBuffer = std::make_unique<IndexBuffer>(m_Device.get(), indices);
-        m_Texture = std::make_unique<Texture>(m_Device.get(), "texture.jpg");
+        m_Texture = std::make_unique<Texture>(m_Device.get(), "Assets/texture.jpg");
         CreateTextureSampler();
         CreateUniformBuffers();
         CreateDescriptorPool();

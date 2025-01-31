@@ -3,6 +3,7 @@
 #include "GlobalUtility.hpp"
 
 #include <set>
+#include <iostream>
 
 VulkanDevice::VulkanDevice(VkInstance instance, VkSurfaceKHR surface, bool enableValidationLayers)
     :   m_Instance(instance), m_Surface(surface), m_EnableValidationLayers(enableValidationLayers)
@@ -78,7 +79,7 @@ void VulkanDevice::CreateLogicalDevice()
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
     {
-        VkDeviceQueueCreateInfo queueCreateInfo{};
+        VkDeviceQueueCreateInfo queueCreateInfo {};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
         queueCreateInfo.queueCount = 1;

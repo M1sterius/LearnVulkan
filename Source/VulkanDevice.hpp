@@ -6,6 +6,11 @@
 #include <memory>
 #include <optional>
 
+// Device extensions that will be enabled
+static const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
 struct QueueFamilyIndices
 {
     // If a device does not support a queue family, the corresponding std::optional won't have a value

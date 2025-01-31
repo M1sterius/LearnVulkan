@@ -301,7 +301,7 @@ void VulkanDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
     EndSingleTimeCommands(commandBuffer);
 }
 
-void VulkanDevice::MapMemory(VkDeviceMemory memory, VkDeviceSize size, VkDeviceSize offset, VkMemoryMapFlags flags, void* data)
+void VulkanDevice::UploadBufferData(VkDeviceMemory memory, VkDeviceSize size, VkDeviceSize offset, VkMemoryMapFlags flags, void* data)
 {
     void* mapMemory;
     vkMapMemory(m_Device, memory, offset, size, flags, &mapMemory);

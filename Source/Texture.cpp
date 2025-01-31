@@ -25,7 +25,7 @@ Texture::Texture(VulkanDevice* device, const std::filesystem::path& path)
     // Load the data from file into the staging buffer
     m_Device->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-    m_Device->MapMemory(stagingBufferMemory, imageSize, 0, 0, pixels);
+    m_Device->UploadBufferData(stagingBufferMemory, imageSize, 0, 0, pixels);
 
     // Free CPU side buffer
     stbi_image_free(pixels);

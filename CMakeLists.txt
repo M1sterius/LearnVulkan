@@ -39,6 +39,8 @@ add_executable(LearnVulkan
         Source/CommandBuffer.hpp
         Source/Mesh.cpp
         Source/Mesh.hpp
+        Source/UniformBuffer.cpp
+        Source/UniformBuffer.hpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
